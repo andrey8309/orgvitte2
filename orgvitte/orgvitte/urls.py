@@ -5,3 +5,4 @@ urlpatterns = [
     path("", include("app_orgvitte.urls")),
     path("admin/", admin.site.urls),
 ]
+
