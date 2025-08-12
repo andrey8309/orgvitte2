@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
 
-{% block title %}Добавить оборудование{% endblock %}
+{% block title %}Редактировать оборудование{% endblock %}
 
 {% block content %}
-<h2 class="mb-4">Добавить оборудование</h2>
+<h2 class="mb-4">Редактировать оборудование</h2>
 <form method="post" class="card p-4 bg-white shadow-sm">
     {% csrf_token %}
     {{ form.as_p }}
