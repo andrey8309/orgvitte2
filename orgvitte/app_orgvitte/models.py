@@ -18,3 +18,21 @@ class Equipment(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.inventory_number})"
+
+class EquipmentAction(models.Model):
+    ACTION_TYPES = [
+        ('repair', 'Ремонт'),
+        ('movement', 'Перемещение'),
+        ('decommission', 'Списание'),
+    ]
+
+    equipment = models.ForeignKey(Equipment, on_delete=models.CASCADE, verbose_name="Оборудование")
+    action_type = models.CharField(max_length=20, choices=ACTION_TYPES, verbose_name="Тип действия")
+    description = models.TextField(verbose_name="Описание", blank=True, null=True)
+    date = models.DateField(verbose_name="Дата")
+    from_location = models.CharField(max_length=255, blank=True, null=True, verbose_name="Откуда")
+    to_location = models.CharField(max_length=255, blank=True, null=True, verbose_name="Куда")
+    performed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Выполнил")
+
+    def __str__(self):
+        return f"{self.get_action_type_display()} - {self.equipment}"

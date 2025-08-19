@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h2 class="mb-4">Добавить действие с оборудованием</h2>
+
+<form method="post" class="bg-light p-4 rounded shadow-sm">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-success">Сохранить</button>
+    <a href="{% url 'list_actions' %}" class="btn btn-secondary">Отмена</a>
+</form>
+{% endblock %}
