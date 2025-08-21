@@ -3,17 +3,17 @@ from django.contrib.auth.models import User
 
 
 class Equipment(models.Model):
-    barcode = models.CharField(max_length=100, unique=True)
-    inventory_number = models.CharField(max_length=100, unique=True)
-    name = models.CharField(max_length=200)
-    equipment_type = models.CharField(max_length=100)
-    location = models.CharField(max_length=200)
-    responsible = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    barcode = models.CharField(max_length=100, unique=True, verbose_name="Штрих-код")
+    inventory_number = models.CharField(max_length=100, unique=True, verbose_name="Инвентарный номер")
+    name = models.CharField(max_length=200, verbose_name="Наименование")
+    equipment_type = models.CharField(max_length=100, verbose_name="Тип оборудования")
+    location = models.CharField(max_length=200, verbose_name="Расположение")
+    responsible = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name="Ответственный")
     status = models.CharField(max_length=50, choices=[
         ('in_use', 'В эксплуатации'),
         ('under_repair', 'В ремонте'),
         ('written_off', 'Списано')
-    ])
+    ], verbose_name="Статус")
     added_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

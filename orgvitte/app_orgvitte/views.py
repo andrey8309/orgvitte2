@@ -45,29 +45,34 @@ def list_actions(request):
     return render(request, "list_actions.html", {"actions": actions})
 
 # Добавление действия (ремонт, перемещение, списание)
-def add_action(request):
-    if request.method == "POST":
+def add_equipment_action(request, equipment_id):
+    equipment = get_object_or_404(Equipment, id=equipment_id)
+
+    if request.method == 'POST':
         form = EquipmentActionForm(request.POST)
         if form.is_valid():
             action = form.save(commit=False)
-            action.performed_by = request.user if request.user.is_authenticated else None
+            action.equipment = equipment
+            action.performed_by = request.user
             action.save()
 
-            # Обновляем статус оборудования, если ремонт или списание
-            if action.action_type == "repair":
-                action.equipment.status = "under_repair"
-            elif action.action_type == "decommission":
-                action.equipment.status = "written_off"
-            elif action.action_type == "movement":
-                if action.to_location:
-                    action.equipment.location = action.to_location
-                action.equipment.status = "in_use"
-            action.equipment.save()
+            # обновим статус оборудования (например, при ремонте или списании)
+            if action.action_type == 'repair':
+                equipment.status = 'under_repair'
+            elif action.action_type == 'move':
+                equipment.location = action.description  # допустим, новое место хранится в описании
+            elif action.action_type == 'write_off':
+                equipment.status = 'written_off'
+            equipment.save()
 
-            messages.success(request, "Действие успешно добавлено!")
-            return redirect("list_actions")
+            messages.success(request, f"Действие '{action.get_action_type_display()}' успешно добавлено для {equipment.name}")
+            return redirect('list_equipment')
         else:
-            messages.error(request, "Ошибка при добавлении действия")
+            messages.error(request, "Ошибка при добавлении действия. Проверьте введённые данные.")
     else:
         form = EquipmentActionForm()
-    return render(request, "add_action.html", {"form": form})
+
+    return render(request, 'add_equipment_action.html', {
+        'form': form,
+        'equipment': equipment
+    })

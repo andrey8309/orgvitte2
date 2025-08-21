@@ -21,10 +21,11 @@
             <td>{{ eq.id }}</td>
             <td>{{ eq.name }}</td>
             <td>{{ eq.inventory_number }}</td>
-            <td>{{ eq.status }}</td>
+            <td>{{ eq.get_status_display }}</td>
             <td>
                 <a href="{% url 'edit_equipment' eq.id %}" class="btn btn-warning btn-sm">✏️</a>
                 <a href="{% url 'delete_equipment' eq.id %}" class="btn btn-danger btn-sm">🗑</a>
+                <a href="{% url 'add_equipment_action' eq.id %}" class="btn btn-success btn-sm">➕ Добавить действие</a>
             </td>
         </tr>
     {% empty %}
