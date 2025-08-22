@@ -26,6 +26,7 @@
                 <a href="{% url 'edit_equipment' eq.id %}" class="btn btn-warning btn-sm">✏️</a>
                 <a href="{% url 'delete_equipment' eq.id %}" class="btn btn-danger btn-sm">🗑</a>
                 <a href="{% url 'add_equipment_action' eq.id %}" class="btn btn-success btn-sm">➕ Добавить действие</a>
+                 <a href="{% url 'equipment_actions' eq.id %}" class="btn btn-info btn-sm">📜 История</a>
             </td>
         </tr>
     {% empty %}
@@ -37,4 +38,6 @@
 </table>
 
 <a href="{% url 'add_equipment' %}" class="btn btn-primary">Добавить оборудование</a>
+<a href="{% url 'export_equipment_csv' %}" class="btn btn-success">📥 Экспорт в CSV</a>
+
 {% endblock %}

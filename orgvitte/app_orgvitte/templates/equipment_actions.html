@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>История действий для: {{ equipment.name }} ({{ equipment.inventory_number }})</h2>
+
+<table class="table table-striped table-bordered bg-white shadow-sm">
+    <thead class="table-dark">
+        <tr>
+            <th>Дата</th>
+            <th>Тип действия</th>
+            <th>Комментарий</th>
+            <th>Пользователь</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for action in actions %}
+        <tr>
+            <td>{{ action.date|date:"d.m.Y H:i" }}</td>
+            <td>
+                {% if action.action_type == 'repair' %} Ремонт
+                {% elif action.action_type == 'move' %} Перемещение
+                {% elif action.action_type == 'write_off' %} Списание
+                {% else %} {{ action.action_type }}
+                {% endif %}
+            </td>
+            <td>{{ action.comment }}</td>
+            <td>{{ action.performed_by.username }}</td>
+        </tr>
+    {% empty %}
+        <tr>
+            <td colspan="4" class="text-center">Нет действий</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<a href="{% url 'list_equipment' %}" class="btn btn-secondary">⬅ Назад к списку оборудования</a>
+{% endblock %}

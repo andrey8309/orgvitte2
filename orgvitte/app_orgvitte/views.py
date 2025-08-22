@@ -1,7 +1,10 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
+from django.http import HttpResponse
 from .models import Equipment, EquipmentAction
 from .forms import EquipmentForm, EquipmentActionForm
+import csv
+
 
 def list_equipment(request):
     equipment_list = Equipment.objects.all()
@@ -76,3 +79,43 @@ def add_equipment_action(request, equipment_id):
         'form': form,
         'equipment': equipment
     })
+
+
+def equipment_actions(request, equipment_id):
+    equipment = get_object_or_404(Equipment, id=equipment_id)
+    actions = EquipmentAction.objects.filter(equipment=equipment).order_by('-date')
+    return render(request, 'equipment_actions.html', {
+        'equipment': equipment,
+        'actions': actions
+    })
+
+def export_equipment_csv(request):
+    response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
+    response['Content-Disposition'] = 'attachment; filename="equipment.csv"'
+
+    writer = csv.writer(response, delimiter=';', quoting=csv.QUOTE_MINIMAL)
+    writer.writerow([
+        'ID',
+        'Инвентарный номер',
+        'Название',
+        'Тип оборудования',
+        'Местоположение',
+        'Ответственный',
+        'Статус',
+        'Дата добавления'
+    ])
+
+    equipment = Equipment.objects.all()
+    for eq in equipment:
+        writer.writerow([
+            eq.id,
+            eq.inventory_number,
+            eq.name,
+            eq.equipment_type,
+            eq.location,
+            eq.responsible.username if eq.responsible else "—",
+            eq.get_status_display(),
+            eq.added_at.strftime("%Y-%m-%d %H:%M")
+        ])
+
+    return response
