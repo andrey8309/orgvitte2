@@ -12,7 +12,4 @@ class EquipmentForm(forms.ModelForm):
 class EquipmentActionForm(forms.ModelForm):
     class Meta:
         model = EquipmentAction
-        fields = ['equipment', 'action_type', 'description', 'date', 'from_location', 'to_location']
-        widgets = {
-            'date': forms.DateInput(attrs={'type': 'date'}),
-        }
+        fields = ['action_type', 'description', 'from_location', 'to_location']
