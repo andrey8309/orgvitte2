@@ -38,5 +38,11 @@
     </tbody>
 </table>
 
-<a href="{% url 'list_equipment' %}" class="btn btn-secondary">⬅ Назад к списку оборудования</a>
+<div class="mt-3">
+    <a href="{% url 'list_equipment' %}" class="btn btn-secondary">⬅ Назад к списку оборудования</a>
+
+    {% if perms.app_orgvitte.add_equipmentaction %}
+        <a href="{% url 'add_equipment_action' equipment.id %}" class="btn btn-success ms-2">➕ Добавить действие</a>
+    {% endif %}
+</div>
 {% endblock %}

@@ -23,10 +23,21 @@
             <td>{{ eq.inventory_number }}</td>
             <td>{{ eq.get_status_display }}</td>
             <td>
-                <a href="{% url 'edit_equipment' eq.id %}" class="btn btn-warning btn-sm">✏️</a>
-                <a href="{% url 'delete_equipment' eq.id %}" class="btn btn-danger btn-sm">🗑</a>
-                <a href="{% url 'add_equipment_action' eq.id %}" class="btn btn-success btn-sm">➕ Добавить действие</a>
-                 <a href="{% url 'equipment_actions' eq.id %}" class="btn btn-info btn-sm">📜 История</a>
+                {% if perms.app_orgvitte.change_equipment %}
+                    <a href="{% url 'edit_equipment' eq.id %}" class="btn btn-warning btn-sm">✏️</a>
+                {% endif %}
+
+                {% if perms.app_orgvitte.delete_equipment %}
+                    <a href="{% url 'delete_equipment' eq.id %}" class="btn btn-danger btn-sm">🗑</a>
+                {% endif %}
+
+                {% if perms.app_orgvitte.add_equipmentaction %}
+                    <a href="{% url 'add_equipment_action' eq.id %}" class="btn btn-info btn-sm">➕ действие</a>
+                {% endif %}
+
+                {% if perms.app_orgvitte.view_equipmentaction %}
+                    <a href="{% url 'equipment_actions' eq.id %}" class="btn btn-secondary btn-sm">📜 история</a>
+                {% endif %}
             </td>
         </tr>
     {% empty %}
@@ -37,7 +48,12 @@
     </tbody>
 </table>
 
-<a href="{% url 'add_equipment' %}" class="btn btn-primary">Добавить оборудование</a>
-<a href="{% url 'export_equipment_csv' %}" class="btn btn-success">📥 Экспорт в CSV</a>
+{% if perms.app_orgvitte.add_equipment %}
+    <a href="{% url 'add_equipment' %}" class="btn btn-primary">Добавить оборудование</a>
+{% endif %}
+
+{% if perms.app_orgvitte.view_equipment %}
+    <a href="{% url 'export_equipment_csv' %}" class="btn btn-outline-success ms-2">⬇️Экспорт в CSV</a>
+{% endif %}
 
 {% endblock %}

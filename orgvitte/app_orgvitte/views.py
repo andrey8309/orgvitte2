@@ -3,15 +3,17 @@ from django.contrib import messages
 from django.http import HttpResponse
 from .models import Equipment, EquipmentAction
 from .forms import EquipmentForm, EquipmentActionForm
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required, permission_required
 import csv
 
 @login_required
+@permission_required('app_orgvitte.view_equipment', raise_exception=True)
 def list_equipment(request):
     equipment_list = Equipment.objects.all()
     return render(request, 'list_equipment.html', {'equipment_list': equipment_list})
 
 @login_required
+@permission_required('app_orgvitte.add_equipment', raise_exception=True)
 def add_equipment(request):
     if request.method == 'POST':
         form = EquipmentForm(request.POST)
@@ -26,6 +28,7 @@ def add_equipment(request):
     return render(request, 'add_equipment.html', {'form': form})
 
 @login_required
+@permission_required('app_orgvitte.change_equipment', raise_exception=True)
 def edit_equipment(request, pk):
     equipment = get_object_or_404(Equipment, pk=pk)
     if request.method == 'POST':
@@ -41,6 +44,7 @@ def edit_equipment(request, pk):
     return render(request, 'edit_equipment.html', {'form': form})
 
 @login_required
+@permission_required('app_orgvitte.delete_equipment', raise_exception=True)
 def delete_equipment(request, pk):
     equipment = get_object_or_404(Equipment, pk=pk)
     equipment.delete()
@@ -53,6 +57,7 @@ def list_actions(request):
 
 # Добавление действия (ремонт, перемещение, списание)
 @login_required
+@permission_required('app_orgvitte.add_equipmentaction', raise_exception=True)
 def add_equipment_action(request, equipment_id):
     equipment = get_object_or_404(Equipment, id=equipment_id)
 
@@ -88,7 +93,7 @@ def add_equipment_action(request, equipment_id):
     })
 
 
-
+@permission_required('app_orgvitte.view_equipmentaction', raise_exception=True)
 def equipment_actions(request, equipment_id):
     equipment = get_object_or_404(Equipment, id=equipment_id)
     actions = EquipmentAction.objects.filter(equipment=equipment).order_by('-date')
@@ -127,3 +132,5 @@ def export_equipment_csv(request):
         ])
 
     return response
+
+
