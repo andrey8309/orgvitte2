@@ -10,7 +10,25 @@ import csv
 @permission_required('app_orgvitte.view_equipment', raise_exception=True)
 def list_equipment(request):
     equipment_list = Equipment.objects.all()
-    return render(request, 'list_equipment.html', {'equipment_list': equipment_list})
+
+    # фильтрация по GET-параметрам
+    name = request.GET.get("name")
+    inventory_number = request.GET.get("inventory_number")
+    status = request.GET.get("status")
+
+    if name:
+        equipment_list = equipment_list.filter(name__icontains=name)
+    if inventory_number:
+        equipment_list = equipment_list.filter(inventory_number__icontains=inventory_number)
+    if status and status != "all":
+        equipment_list = equipment_list.filter(status=status)
+
+    return render(request, 'list_equipment.html', {
+        'equipment_list': equipment_list,
+        'filter_name': name or "",
+        'filter_inventory_number': inventory_number or "",
+        'filter_status': status or "all",
+    })
 
 @login_required
 @permission_required('app_orgvitte.add_equipment', raise_exception=True)

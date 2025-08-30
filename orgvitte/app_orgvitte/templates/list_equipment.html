@@ -5,6 +5,31 @@
 {% block content %}
 <h2 class="mb-4">Список оборудования</h2>
 
+<!-- 🔽 Форма фильтрации -->
+<form method="get" class="row g-3 mb-3">
+    <div class="col-md-4">
+        <input type="text" name="name" class="form-control"
+               placeholder="Название" value="{{ filter_name }}">
+    </div>
+    <div class="col-md-3">
+        <input type="text" name="inventory_number" class="form-control"
+               placeholder="Инвентарный номер" value="{{ filter_inventory_number }}">
+    </div>
+    <div class="col-md-3">
+        <select name="status" class="form-select">
+            <option value="all" {% if filter_status == "all" %}selected{% endif %}>Все</option>
+            <option value="in_use" {% if filter_status == "in_use" %}selected{% endif %}>В эксплуатации</option>
+            <option value="under_repair" {% if filter_status == "under_repair" %}selected{% endif %}>В ремонте</option>
+            <option value="written_off" {% if filter_status == "written_off" %}selected{% endif %}>Списано</option>
+        </select>
+    </div>
+    <div class="col-md-2 d-flex">
+        <button type="submit" class="btn btn-primary me-2 flex-grow-1">Поиск</button>
+        <a href="{% url 'list_equipment' %}" class="btn btn-secondary flex-grow-1">Сбросить</a>
+    </div>
+</form>
+<!-- 🔼 Форма фильтрации -->
+
 <table class="table table-striped table-bordered bg-white shadow-sm">
     <thead class="table-dark">
         <tr>
@@ -51,9 +76,4 @@
 {% if perms.app_orgvitte.add_equipment %}
     <a href="{% url 'add_equipment' %}" class="btn btn-primary">Добавить оборудование</a>
 {% endif %}
-
-{% if perms.app_orgvitte.view_equipment %}
-    <a href="{% url 'export_equipment_csv' %}" class="btn btn-outline-success ms-2">⬇️Экспорт в CSV</a>
-{% endif %}
-
 {% endblock %}
