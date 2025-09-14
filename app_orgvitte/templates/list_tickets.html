@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Список заявок</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Оборудование</th>
+            <th>Тип заявки</th>
+            <th>Описание</th>
+            <th>Статус</th>
+            <th>Дата создания</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ticket in tickets %}
+        <tr>
+            <td>{{ ticket.id }}</td>
+            <td>{{ ticket.equipment.name }} ({{ ticket.equipment.inventory_number }})</td>
+            <td>{{ ticket.get_request_type_display }}</td>
+            <td>{{ ticket.description }}</td>
+            <td>{{ ticket.get_status_display }}</td>
+            <td>{{ ticket.created_at|date:"d.m.Y H:i" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center">Заявок пока нет</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

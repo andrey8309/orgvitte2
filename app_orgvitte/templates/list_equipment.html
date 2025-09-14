@@ -75,5 +75,18 @@
 
 {% if perms.app_orgvitte.add_equipment %}
     <a href="{% url 'add_equipment' %}" class="btn btn-primary">Добавить оборудование</a>
+
+<hr>
+<div class="mt-4">
+    <h4>Дополнительные функции</h4>
+    <a href="{% url 'feedback' %}" class="btn btn-outline-primary">✉ Обратная связь</a>
+    <a href="{% url 'upload_file' %}" class="btn btn-outline-success">📂 Загрузить файл</a>
+    <a href="{% url 'list_tickets' %}" class="btn btn-outline-warning">📝 Заявки</a>
+    <a href="{% url 'list_articles' %}" class="btn btn-outline-info">📚 Статьи / Справка</a>
+</div>
+<div class="mt-4">
+
+
+
 {% endif %}
 {% endblock %}

@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Справочные статьи</h2>
+
+<ul class="list-group mt-3">
+    {% for article in articles %}
+    <li class="list-group-item">
+        <a href="{% url 'view_article' article.id %}">
+            {{ article.title }}
+        </a>
+    </li>
+    {% empty %}
+    <li class="list-group-item text-center">Статей пока нет</li>
+    {% endfor %}
+</ul>
+{% endblock %}

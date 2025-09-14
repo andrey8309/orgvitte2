@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Обратная связь</h2>
+
+    <form method="post" class="card p-4 shadow-sm">
+        {% csrf_token %}
+
+        <div class="mb-3">
+            <label for="id_name" class="form-label">Ваше имя</label>
+            {{ form.name }}
+        </div>
+
+        <div class="mb-3">
+            <label for="id_email" class="form-label">Email</label>
+            {{ form.email }}
+        </div>
+
+        <div class="mb-3">
+            <label for="id_message" class="form-label">Сообщение</label>
+            {{ form.message }}
+        </div>
+
+        <button type="submit" class="btn btn-success">Отправить</button>
+        <a href="{% url 'list_equipment' %}" class="btn btn-secondary">Назад</a>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2 class="mb-4">Отчёт по заявкам (за последние 30 дней)</h2>
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Тип заявки</th>
+            <th>Количество</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for item in stats %}
+        <tr>
+            <td>{{ item.title }}</td>
+            <td>{{ item.total }}</td>
+        </tr>
+    {% empty %}
+        <tr>
+            <td colspan="2" class="text-center">Нет данных</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<a href="{% url 'list_equipment' %}" class="btn btn-secondary">⬅ Назад</a>
+{% endblock %}

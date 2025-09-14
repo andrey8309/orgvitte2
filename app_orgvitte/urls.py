@@ -10,4 +10,12 @@ urlpatterns = [
     path('equipment/<int:equipment_id>/action/', views.add_equipment_action, name='add_equipment_action'),
     path('equipment/<int:equipment_id>/actions/', views.equipment_actions, name='equipment_actions'),
     path('equipment/export/csv/', views.export_equipment_csv, name='export_equipment_csv'),
+    path('feedback/', views.feedback_view, name='feedback'),
+    path('files/upload/', views.upload_file, name='upload_file'),
+    path('files/', views.list_files, name='list_files'),
+    path('tickets/new/', views.create_request_ticket, name='create_ticket'),
+    path('tickets/', views.list_tickets, name='list_tickets'),
+    path('articles/', views.list_articles, name='list_articles'),
+    path('articles/<int:article_id>/', views.view_article, name='view_article'),
+    path('reports/tickets/', views.report_tickets, name='report_tickets'),
 ]

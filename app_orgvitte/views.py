@@ -1,10 +1,14 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.http import HttpResponse
-from .models import Equipment, EquipmentAction
-from .forms import EquipmentForm, EquipmentActionForm
+from .models import Equipment, EquipmentAction, Feedback, FileUpload, RequestTicket, Article
+from .forms import EquipmentForm, EquipmentActionForm, RequestTicketForm, FeedbackForm, FileUploadForm
 from django.contrib.auth.decorators import login_required, permission_required
 import csv
+from django.db.models import Count
+from django.utils import timezone
+from datetime import timedelta
+import json
 
 @login_required
 @permission_required('app_orgvitte.view_equipment', raise_exception=True)
@@ -87,7 +91,7 @@ def add_equipment_action(request, equipment_id):
             action.performed_by = request.user
             action.save()
 
-            # обновим статус оборудования
+            # Автоматическое обновление статуса оборудования
             if action.action_type == 'repair':
                 equipment.status = 'under_repair'
             elif action.action_type == 'movement':
@@ -98,10 +102,10 @@ def add_equipment_action(request, equipment_id):
 
             equipment.save()
 
-            messages.success(request, f"Действие '{action.get_action_type_display()}' успешно добавлено для {equipment.name}")
-            return redirect('list_equipment')
+            messages.success(request, f"Действие '{action.get_action_type_display()}' добавлено для {equipment.name}")
+            return redirect('equipment_actions', equipment_id=equipment.id)
         else:
-            messages.error(request, "Ошибка при добавлении действия. Проверьте введённые данные.")
+            messages.error(request, "Ошибка при добавлении действия.")
     else:
         form = EquipmentActionForm()
 
@@ -111,15 +115,19 @@ def add_equipment_action(request, equipment_id):
     })
 
 
+@login_required
 @permission_required('app_orgvitte.view_equipmentaction', raise_exception=True)
 def equipment_actions(request, equipment_id):
     equipment = get_object_or_404(Equipment, id=equipment_id)
     actions = EquipmentAction.objects.filter(equipment=equipment).order_by('-date')
+
     return render(request, 'equipment_actions.html', {
         'equipment': equipment,
         'actions': actions
     })
 
+@login_required
+@permission_required('app_orgvitte.view_equipment', raise_exception=True)
 def export_equipment_csv(request):
     response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
     response['Content-Disposition'] = 'attachment; filename="equipment.csv"'
@@ -152,3 +160,114 @@ def export_equipment_csv(request):
     return response
 
 
+@login_required
+def create_request_ticket(request):
+    if request.method == "POST":
+        title = request.POST.get("title")
+        description = request.POST.get("description")
+
+        if not title or not description:
+            messages.error(request, "Заполните все поля")
+        else:
+            RequestTicket.objects.create(
+                title=title,
+                description=description,
+                created_by=request.user
+            )
+            messages.success(request, "Заявка успешно создана")
+            return redirect("list_tickets")
+
+    return render(request, "create_request_ticket.html")
+
+
+@login_required
+def list_tickets(request):
+    if request.user.is_superuser or request.user.groups.filter(name="Администратор").exists():
+        tickets = RequestTicket.objects.all().order_by("-created_at")
+    else:
+        tickets = RequestTicket.objects.filter(created_by=request.user).order_by("-created_at")
+
+    return render(request, "list_tickets.html", {"tickets": tickets})
+
+
+@login_required
+def feedback_view(request):
+    if request.method == "POST":
+        form = FeedbackForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Спасибо! Ваше сообщение отправлено.")
+            return redirect("list_equipment")
+        else:
+            messages.error(request, "Пожалуйста, исправьте ошибки в форме.")
+    else:
+        form = FeedbackForm()
+
+    return render(request, "feedback.html", {"form": form})
+
+
+# ==== Загрузка файлов  ====
+
+@login_required
+def upload_file(request):
+    if request.method == 'POST':
+        form = FileUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Файл успешно загружен!")
+            return redirect('list_files')
+        else:
+            messages.error(request, "Ошибка при загрузке файла. Проверьте данные.")
+    else:
+        form = FileUploadForm()
+
+    return render(request, 'upload_file.html', {'form': form})
+
+
+@login_required
+def list_files(request):
+    files = FileUpload.objects.all().order_by('-uploaded_at')
+    return render(request, 'list_files.html', {'files': files})
+
+
+
+# ==== Статьи / справка по системе ====
+
+@login_required
+def list_articles(request):
+    articles = Article.objects.all().order_by("-created_at")
+    return render(request, "articles.html", {"articles": articles})
+
+
+@login_required
+def view_article(request, article_id):
+    article = get_object_or_404(Article, id=article_id)
+    return render(request, "view_article.html", {"article": article})
+
+@login_required
+def report_tickets(request):
+    """Отчёт по заявкам: количество заявок по типам за последние 30 дней"""
+
+    # последние 30 дней
+    last_month = timezone.now() - timedelta(days=30)
+
+    stats = (
+        RequestTicket.objects.filter(created_at__gte=last_month)
+        .values("title")
+        .annotate(total=Count("id"))
+        .order_by("-total")
+    )
+
+    # подготовим данные для графика
+    labels = [item["title"] for item in stats]
+    data = [item["total"] for item in stats]
+
+    return render(
+        request,
+        "report_tickets.html",
+        {
+            "stats": stats,
+            "labels": json.dumps(labels),
+            "data": json.dumps(data),
+        },
+    )
