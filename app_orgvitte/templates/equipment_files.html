@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block title %}Файлы для {{ equipment.name }}{% endblock %}
+
+{% block content %}
+<h2>Файлы для {{ equipment.name }}</h2>
+
+<a href="{% url 'upload_file' equipment.id %}" class="btn btn-success mb-3">➕ Загрузить файл</a>
+
+<table class="table table-striped table-bordered bg-white shadow-sm">
+    <thead class="table-dark">
+        <tr>
+            <th>Описание</th>
+            <th>Файл</th>
+            <th>Дата загрузки</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for f in files %}
+        <tr>
+            <td>{{ f.description }}</td>
+            <td><a href="{{ f.file.url }}" target="_blank">📎 Скачать</a></td>
+            <td>{{ f.uploaded_at|date:"d.m.Y H:i" }}</td>
+        </tr>
+    {% empty %}
+        <tr>
+            <td colspan="3" class="text-center">Нет файлов</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<a href="{% url 'list_equipment' %}" class="btn btn-secondary">⬅ Назад</a>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title %}Отзыв #{{ feedback.id }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Отзыв #{{ feedback.id }}</h2>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <p><strong>Дата:</strong> {{ feedback.created_at|date:"d.m.Y H:i" }}</p>
+            <p><strong>Имя:</strong> {{ feedback.name }}</p>
+            <p><strong>Email:</strong> {{ feedback.email }}</p>
+            <p><strong>Сообщение:</strong></p>
+            <p>{{ feedback.message|linebreaks }}</p>
+        </div>
+    </div>
+
+    <a href="{% url 'list_feedback' %}" class="btn btn-secondary mt-3">⬅ Назад к списку</a>
+</div>
+{% endblock %}

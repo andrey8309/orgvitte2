@@ -63,6 +63,11 @@
                 {% if perms.app_orgvitte.view_equipmentaction %}
                     <a href="{% url 'equipment_actions' eq.id %}" class="btn btn-secondary btn-sm">📜 история</a>
                 {% endif %}
+
+                {% if perms.app_orgvitte.view_fileupload %}
+                      <a href="{% url 'equipment_files' eq.id %}" class="btn btn-dark btn-sm">📎 файлы</a>
+                {% endif %}
+
             </td>
         </tr>
     {% empty %}
@@ -80,7 +85,6 @@
 <div class="mt-4">
     <h4>Дополнительные функции</h4>
     <a href="{% url 'feedback' %}" class="btn btn-outline-primary">✉ Обратная связь</a>
-    <a href="{% url 'upload_file' %}" class="btn btn-outline-success">📂 Загрузить файл</a>
     <a href="{% url 'list_tickets' %}" class="btn btn-outline-warning">📝 Заявки</a>
     <a href="{% url 'list_articles' %}" class="btn btn-outline-info">📚 Статьи / Справка</a>
 </div>

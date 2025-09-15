@@ -209,26 +209,45 @@ def feedback_view(request):
 # ==== Загрузка файлов  ====
 
 @login_required
-def upload_file(request):
+def upload_file(request, equipment_id):
+    equipment = get_object_or_404(Equipment, id=equipment_id)
+
     if request.method == 'POST':
         form = FileUploadForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Файл успешно загружен!")
-            return redirect('list_files')
+            file_upload = form.save(commit=False)
+            file_upload.equipment = equipment  # ← автоматическая привязка
+            file_upload.save()
+            messages.success(request, f"Файл успешно загружен для {equipment.name}!")
+            return redirect('equipment_files', equipment_id=equipment.id)
         else:
             messages.error(request, "Ошибка при загрузке файла. Проверьте данные.")
     else:
         form = FileUploadForm()
 
-    return render(request, 'upload_file.html', {'form': form})
+    return render(request, 'upload_file.html', {'form': form, 'equipment': equipment})
 
+@login_required
+def equipment_files(request, equipment_id):
+    equipment = get_object_or_404(Equipment, id=equipment_id)
+    files = equipment.files.all()
+    return render(request, 'equipment_files.html', {
+        'equipment': equipment,
+        'files': files
+    })
 
 @login_required
 def list_files(request):
-    files = FileUpload.objects.all().order_by('-uploaded_at')
-    return render(request, 'list_files.html', {'files': files})
+    files = FileUpload.objects.select_related("equipment").order_by("-uploaded_at")
+    return render(request, "list_files.html", {"files": files})
 
+@login_required
+@permission_required("app_orgvitte.delete_fileupload", raise_exception=True)
+def delete_file(request, pk):
+    file = get_object_or_404(FileUpload, pk=pk)
+    file.delete()
+    messages.success(request, "Файл удалён.")
+    return redirect("list_files")
 
 
 # ==== Статьи / справка по системе ====
@@ -271,3 +290,23 @@ def report_tickets(request):
             "data": json.dumps(data),
         },
     )
+
+@login_required
+@permission_required('app_orgvitte.view_feedback', raise_exception=True)
+def list_feedback(request):
+    feedbacks = Feedback.objects.order_by('-created_at')
+    return render(request, 'list_feedback.html', {'feedbacks': feedbacks})
+
+@login_required
+@permission_required('app_orgvitte.view_feedback', raise_exception=True)
+def feedback_detail(request, pk):
+    feedback = get_object_or_404(Feedback, pk=pk)
+    return render(request, 'feedback_detail.html', {'feedback': feedback})
+
+@login_required
+@permission_required('app_orgvitte.delete_feedback', raise_exception=True)
+def delete_feedback(request, pk):
+    feedback = get_object_or_404(Feedback, pk=pk)
+    feedback.delete()
+    messages.success(request, "Отзыв успешно удалён.")
+    return redirect('list_feedback')

@@ -25,6 +25,11 @@
                         <a class="nav-link" href="{% url 'login' %}">Войти</a>
                     </li>
                 {% endif %}
+                {% if perms.app_orgvitte.view_feedback %}
+                     <a class="btn btn-outline-light ms-2" href="{% url 'list_feedback' %}">
+                         💬 Отзывы
+                     </a>
+                {% endif %}
             </ul>
         </div>
     </nav>

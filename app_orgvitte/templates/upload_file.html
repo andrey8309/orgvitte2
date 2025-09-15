@@ -9,6 +9,6 @@
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit" class="btn btn-success">Загрузить</button>
-    <a href="{% url 'list_files' %}" class="btn btn-secondary">Назад</a>
+    <a href="{% url 'equipment_files' equipment.id %}" class="btn btn-secondary">Назад</a>
 </form>
 {% endblock %}

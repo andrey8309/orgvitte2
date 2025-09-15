@@ -1,24 +1,40 @@
 {% extends 'base.html' %}
-
-{% block title %}Файлы{% endblock %}
-
+{% block title %}Загруженные файлы{% endblock %}
 {% block content %}
-<h2>Доступные файлы</h2>
-
-{% if files %}
-    <ul class="list-group">
-        {% for f in files %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span>
-                    {{ f.title }} ({{ f.uploaded_at|date:"d.m.Y H:i" }})
-                </span>
-                <a href="{{ f.file.url }}" class="btn btn-primary btn-sm" download>📥 Скачать</a>
-            </li>
-        {% endfor %}
-    </ul>
-{% else %}
-    <p>Файлы отсутствуют.</p>
-{% endif %}
-
-<a href="{% url 'upload_file' %}" class="btn btn-success mt-3">➕ Загрузить новый файл</a>
+<div class="container mt-4">
+    <h2 class="mb-4">Файлы</h2>
+    <a href="{% url 'upload_file' %}" class="btn btn-primary mb-3">Загрузить файл</a>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Описание</th>
+                <th>Оборудование</th>
+                <th>Файл</th>
+                <th>Дата загрузки</th>
+                {% if perms.app_orgvitte.delete_fileupload %}
+                    <th>Действия</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for f in files %}
+                <tr>
+                    <td>{{ f.description }}</td>
+                    <td>{{ f.equipment }}</td>
+                    <td><a href="{{ f.file.url }}" target="_blank">Скачать</a></td>
+                    <td>{{ f.uploaded_at|date:"d.m.Y H:i" }}</td>
+                    {% if perms.app_orgvitte.delete_fileupload %}
+                        <td>
+                            <a href="{% url 'delete_file' f.id %}" class="btn btn-danger btn-sm">Удалить</a>
+                        </td>
+                    {% endif %}
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center">Файлов нет</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endblock %}
