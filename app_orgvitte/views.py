@@ -161,23 +161,50 @@ def export_equipment_csv(request):
 
 
 @login_required
-def create_request_ticket(request):
+def create_request_ticket(request, equipment_id=None):
+    """
+    Создание заявки
+    """
+    equipment = None
+    if equipment_id:
+        equipment = get_object_or_404(Equipment, id=equipment_id)
+
     if request.method == "POST":
-        title = request.POST.get("title")
-        description = request.POST.get("description")
-
-        if not title or not description:
-            messages.error(request, "Заполните все поля")
-        else:
-            RequestTicket.objects.create(
-                title=title,
-                description=description,
-                created_by=request.user
-            )
-            messages.success(request, "Заявка успешно создана")
+        form = RequestTicketForm(request.POST, initial={"equipment": equipment.id if equipment else None})
+        if form.is_valid():
+            ticket = form.save(commit=False)
+            ticket.created_by = request.user
+            ticket.save()
+            messages.success(request, f"Заявка «{ticket.get_request_type_display()}» успешно создана!")
             return redirect("list_tickets")
+        else:
+            messages.error(request, "Ошибка при создании заявки. Проверьте введённые данные.")
+    else:
+        form = RequestTicketForm(initial={"equipment": equipment.id if equipment else None})
 
-    return render(request, "create_request_ticket.html")
+    return render(request, "create_ticket.html", {
+        "form": form,
+        "equipment": equipment,
+    })
+
+@login_required
+@permission_required('app_orgvitte.change_requestticket', raise_exception=True)
+def update_ticket_status(request, ticket_id, new_status):
+    ticket = get_object_or_404(RequestTicket, id=ticket_id)
+
+    valid_statuses = ['new', 'in_progress', 'done']
+    if new_status not in valid_statuses:
+        messages.error(request, "Недопустимый статус.")
+        return redirect('list_tickets')
+
+    ticket.status = new_status
+    ticket.save()
+
+    messages.success(
+        request,
+        f"Статус заявки #{ticket.id} изменён на '{ticket.get_status_display()}'."
+    )
+    return redirect('list_tickets')
 
 
 @login_required
@@ -310,3 +337,4 @@ def delete_feedback(request, pk):
     feedback.delete()
     messages.success(request, "Отзыв успешно удалён.")
     return redirect('list_feedback')
+

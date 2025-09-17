@@ -22,4 +22,6 @@ urlpatterns = [
     path('feedback/delete/<int:pk>/', views.delete_feedback, name='delete_feedback'),
     path('equipment/<int:equipment_id>/files/', views.equipment_files, name='equipment_files'),
     path('equipment/<int:equipment_id>/files/upload/', views.upload_file, name='upload_file'),
+    path('tickets/<int:ticket_id>/status/<str:new_status>/', views.update_ticket_status, name='update_ticket_status'),
+
 ]

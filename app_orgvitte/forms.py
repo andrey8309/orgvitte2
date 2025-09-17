@@ -5,7 +5,7 @@ from .models import Equipment, EquipmentAction, Feedback, FileUpload, RequestTic
 class EquipmentForm(forms.ModelForm):
     class Meta:
         model = Equipment
-        fields = ['barcode', 'inventory_number', 'name', 'equipment_type', 'location', 'responsible', 'status']
+        fields = ['name', 'inventory_number', 'equipment_type', 'location', 'responsible', 'status']
         widgets = {
             'status': forms.Select(choices=Equipment._meta.get_field('status').choices),
         }
@@ -34,7 +34,37 @@ class FileUploadForm(forms.ModelForm):
 class RequestTicketForm(forms.ModelForm):
     class Meta:
         model = RequestTicket
-        fields = ['title', 'description', 'request_type']
+        fields = ["equipment", "request_type", "description"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Если выбрано оборудование — фильтруем типы заявок
+        equipment = self.initial.get("equipment") or self.data.get("equipment")
+        if equipment:
+            try:
+                eq = Equipment.objects.get(id=equipment)
+                if eq.equipment_type == "Принтер":
+                    self.fields["request_type"].choices = [
+                        ("cartridge", "Замена картриджа"),
+                        ("repair", "Ремонт оборудования"),
+                        ("other", "Другое"),
+                    ]
+                elif eq.equipment_type == "Телефон":
+                    self.fields["request_type"].choices = [
+                        ("phone_number", "Смена номера телефона"),
+                        ("repair", "Ремонт оборудования"),
+                        ("other", "Другое"),
+                    ]
+                else:
+                    # Для любого другого оборудования — только ремонт и другое
+                    self.fields["request_type"].choices = [
+                        ("repair", "Ремонт оборудования"),
+                        ("other", "Другое"),
+                    ]
+            except Equipment.DoesNotExist:
+                pass
+
 
 class ArticleForm(forms.ModelForm):
     class Meta:

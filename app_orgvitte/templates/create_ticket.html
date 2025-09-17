@@ -1,11 +1,17 @@
 {% extends 'base.html' %}
 
-{% block content %}
-<h2>Создать заявку</h2>
+{% block title %}Создать заявку{% endblock %}
 
-<form method="post" class="mt-3">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-success">Отправить заявку</button>
-</form>
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Создать заявку</h2>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+
+        <button type="submit" class="btn btn-success">Отправить заявку</button>
+        <a href="{% url 'list_tickets' %}" class="btn btn-secondary">Назад</a>
+    </form>
+</div>
 {% endblock %}
