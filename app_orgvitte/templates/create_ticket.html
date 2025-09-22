@@ -8,9 +8,23 @@
 
     <form method="post">
         {% csrf_token %}
-        {{ form.as_p }}
 
-        <button type="submit" class="btn btn-success">Отправить заявку</button>
+        <div class="mb-3">
+            <label for="{{ form.equipment.id_for_label }}" class="form-label">Оборудование</label>
+            {{ form.equipment }}
+        </div>
+
+        <div class="mb-3">
+            <label for="{{ form.request_type.id_for_label }}" class="form-label">Тип заявки</label>
+            {{ form.request_type }}
+        </div>
+
+        <div class="mb-3">
+            <label for="{{ form.description.id_for_label }}" class="form-label">Описание проблемы</label>
+            {{ form.description }}
+        </div>
+
+        <button type="submit" class="btn btn-success">Создать заявку</button>
         <a href="{% url 'list_tickets' %}" class="btn btn-secondary">Назад</a>
     </form>
 </div>

@@ -31,6 +31,11 @@ class FileUploadForm(forms.ModelForm):
         model = FileUpload
         fields = ['file', 'description']
 
+from django import forms
+from .models import RequestTicket, Equipment
+
+
+
 class RequestTicketForm(forms.ModelForm):
     class Meta:
         model = RequestTicket
@@ -39,31 +44,48 @@ class RequestTicketForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Если выбрано оборудование — фильтруем типы заявок
-        equipment = self.initial.get("equipment") or self.data.get("equipment")
-        if equipment:
+        # Сначала ставим все варианты из модели (чтобы валидация видела полный список)
+        self.fields["request_type"].choices = RequestTicket.REQUEST_TYPES
+
+        # Попробуем определить equipment_id (с учётом POST, initial или instance)
+        equipment_id = None
+
+        # 1) из POST (если сабмит)
+        data = getattr(self, "data", None)
+        if data and data.get("equipment"):
+            equipment_id = data.get("equipment")
+        # 2) из initial (например, при GET с preselected equipment)
+        elif self.initial.get("equipment"):
+            equipment_id = self.initial.get("equipment")
+        # 3) из instance (при редактировании)
+        elif self.instance and getattr(self.instance, "equipment_id", None):
+            equipment_id = self.instance.equipment_id
+
+        # нормализуем в int
+        try:
+            equipment_id_int = int(equipment_id) if equipment_id is not None else None
+        except (ValueError, TypeError):
+            equipment_id_int = None
+
+        if equipment_id_int:
             try:
-                eq = Equipment.objects.get(id=equipment)
-                if eq.equipment_type == "Принтер":
-                    self.fields["request_type"].choices = [
-                        ("cartridge", "Замена картриджа"),
-                        ("repair", "Ремонт оборудования"),
-                        ("other", "Другое"),
-                    ]
-                elif eq.equipment_type == "Телефон":
-                    self.fields["request_type"].choices = [
-                        ("phone_number", "Смена номера телефона"),
-                        ("repair", "Ремонт оборудования"),
-                        ("other", "Другое"),
-                    ]
-                else:
-                    # Для любого другого оборудования — только ремонт и другое
-                    self.fields["request_type"].choices = [
-                        ("repair", "Ремонт оборудования"),
-                        ("other", "Другое"),
-                    ]
+                eq = Equipment.objects.get(pk=equipment_id_int)
             except Equipment.DoesNotExist:
-                pass
+                eq = None
+
+            if eq:
+                # Проверяем ключи equipment_type, а не русские метки
+                if eq.equipment_type == 'printer':
+                    allowed = ("cartridge", "repair", "other")
+                elif eq.equipment_type == 'phone':
+                    allowed = ("phone_number", "repair", "other")
+                else:
+                    allowed = ("repair", "other")
+
+                # Оставляем только допустимые варианты (из RequestTicket.REQUEST_TYPES)
+                self.fields["request_type"].choices = [
+                    (key, label) for key, label in RequestTicket.REQUEST_TYPES if key in allowed
+                ]
 
 
 class ArticleForm(forms.ModelForm):

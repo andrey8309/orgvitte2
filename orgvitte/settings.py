@@ -52,6 +52,8 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
+AUTH_USER_MODEL = "app_orgvitte.CustomUser"
+
 ROOT_URLCONF = 'orgvitte.urls'
 
 TEMPLATES = [
@@ -136,3 +138,4 @@ LOGOUT_REDIRECT_URL = 'login'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
