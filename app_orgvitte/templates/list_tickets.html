@@ -24,7 +24,13 @@
             <tr>
                 <td>{{ ticket.id }}</td>
                 <td>{{ ticket.created_at|date:"d.m.Y H:i" }}</td>
-                <td>{{ ticket.equipment.name }} ({{ ticket.equipment.inventory_number }})</td>
+                <td>
+                    {% if ticket.equipment %}
+                        {{ ticket.equipment.name }} ({{ ticket.equipment.inventory_number }})
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
                 <td>{{ ticket.get_request_type_display }}</td>
                 <td>{{ ticket.description }}</td>
                 <td>
@@ -38,7 +44,7 @@
                 </td>
                 <td>{{ ticket.created_by.username }}</td>
                 <td>
-                    {% if perms.app_orgvitte.change_requestticket %}
+                    {% if user.role == "tech" or user.role == "admin" %}
                         {% if ticket.status == 'new' %}
                             <a href="{% url 'update_ticket_status' ticket.id 'in_progress' %}" class="btn btn-sm btn-warning">Взять в работу</a>
                         {% elif ticket.status == 'in_progress' %}
@@ -55,6 +61,8 @@
         </tbody>
     </table>
 
-    <a href="{% url 'create_ticket' %}" class="btn btn-primary">➕ Создать заявку</a>
+    {% if user.role == "user" or user.role == "admin" %}
+        <a href="{% url 'create_ticket' %}" class="btn btn-primary">➕ Создать заявку</a>
+    {% endif %}
 </div>
 {% endblock %}

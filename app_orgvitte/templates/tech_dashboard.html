@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Панель техника{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Техник: {{ request.user.username }}</h2>
+    <p>Доступные действия:</p>
+    <ul class="list-group mt-3">
+        <li class="list-group-item"><a href="{% url 'list_tickets' %}">Список заявок</a></li>
+        <li class="list-group-item"><a href="{% url 'list_actions' %}">История действий с оборудованием</a></li>
+    </ul>
+</div>
+{% endblock %}

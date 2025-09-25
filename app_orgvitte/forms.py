@@ -1,6 +1,7 @@
 from django import forms
 from .models import Equipment, EquipmentAction, Feedback, FileUpload, RequestTicket, Article
-
+from .models import CustomUser
+from django.contrib.auth.forms import UserCreationForm
 
 class EquipmentForm(forms.ModelForm):
     class Meta:
@@ -31,8 +32,7 @@ class FileUploadForm(forms.ModelForm):
         model = FileUpload
         fields = ['file', 'description']
 
-from django import forms
-from .models import RequestTicket, Equipment
+
 
 
 
@@ -44,20 +44,20 @@ class RequestTicketForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Сначала ставим все варианты из модели (чтобы валидация видела полный список)
+        # Сначала ставим все варианты из модели
         self.fields["request_type"].choices = RequestTicket.REQUEST_TYPES
 
         # Попробуем определить equipment_id (с учётом POST, initial или instance)
         equipment_id = None
 
-        # 1) из POST (если сабмит)
+        # 1) из POST
         data = getattr(self, "data", None)
         if data and data.get("equipment"):
             equipment_id = data.get("equipment")
-        # 2) из initial (например, при GET с preselected equipment)
+        # 2) из initial
         elif self.initial.get("equipment"):
             equipment_id = self.initial.get("equipment")
-        # 3) из instance (при редактировании)
+        # 3) из instance
         elif self.instance and getattr(self.instance, "equipment_id", None):
             equipment_id = self.instance.equipment_id
 
@@ -74,7 +74,7 @@ class RequestTicketForm(forms.ModelForm):
                 eq = None
 
             if eq:
-                # Проверяем ключи equipment_type, а не русские метки
+
                 if eq.equipment_type == 'printer':
                     allowed = ("cartridge", "repair", "other")
                 elif eq.equipment_type == 'phone':
@@ -82,7 +82,7 @@ class RequestTicketForm(forms.ModelForm):
                 else:
                     allowed = ("repair", "other")
 
-                # Оставляем только допустимые варианты (из RequestTicket.REQUEST_TYPES)
+
                 self.fields["request_type"].choices = [
                     (key, label) for key, label in RequestTicket.REQUEST_TYPES if key in allowed
                 ]
@@ -92,3 +92,24 @@ class ArticleForm(forms.ModelForm):
     class Meta:
         model = Article
         fields = ['title', 'content']
+
+class UserEditForm(forms.ModelForm):
+    class Meta:
+        model = CustomUser
+        fields = ["username", "email", "role", "is_active"]
+        labels = {
+            "username": "Логин",
+            "email": "Email",
+            "role": "Роль",
+            "is_active": "Активен",
+        }
+
+class UserEditForm(forms.ModelForm):
+    class Meta:
+        model = CustomUser
+        fields = ["username", "email", "role", "is_active", "is_staff", "is_superuser"]
+
+class UserCreateForm(UserCreationForm):
+    class Meta:
+        model = CustomUser
+        fields = ["username", "email", "role", "is_active", "is_staff", "is_superuser"]

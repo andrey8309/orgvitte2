@@ -23,5 +23,15 @@ urlpatterns = [
     path('equipment/<int:equipment_id>/files/', views.equipment_files, name='equipment_files'),
     path('equipment/<int:equipment_id>/files/upload/', views.upload_file, name='upload_file'),
     path('tickets/<int:ticket_id>/status/<str:new_status>/', views.update_ticket_status, name='update_ticket_status'),
-
+    path("admin-panel/users/", views.admin_user_list, name="admin_user_list"),
+    path("admin-panel/users/<int:user_id>/edit/", views.edit_user, name="edit_user"),
+    path("admin-panel/users/<int:user_id>/edit/", views.edit_user, name="edit_user"),
+    path("admin-panel/users/<int:user_id>/delete/", views.delete_user, name="delete_user"),
+    path("admin-panel/users/<int:user_id>/password/", views.change_password, name="change_password"),
+    path("admin-panel/users/create/", views.create_user, name="create_user"),
+    path("dashboard/", views.dashboard, name="dashboard"),
+    path("admin-panel/", views.admin_dashboard, name="admin_dashboard"),
+    path("tech-panel/", views.tech_dashboard, name="tech_dashboard"),
+    path("user-panel/", views.user_dashboard, name="user_dashboard"),
+    path("tickets/<int:ticket_id>/status/<str:new_status>/", views.update_ticket_status, name="update_ticket_status"),
 ]

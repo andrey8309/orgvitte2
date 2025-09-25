@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title %}Редактировать пользователя{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Редактировать пользователя: {{ user.username }}</h2>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-success">💾 Сохранить</button>
+        <a href="{% url 'admin_user_list' %}" class="btn btn-secondary">⬅ Назад</a>
+    </form>
+
+    <hr>
+    <a href="{% url 'change_password' user.id %}" class="btn btn-warning">
+        🔑 Сменить пароль
+    </a>
+</div>
+{% endblock %}

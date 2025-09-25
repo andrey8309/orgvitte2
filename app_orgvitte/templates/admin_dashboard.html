@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Панель администратора{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Администратор: {{ request.user.username }}</h2>
+    <ul class="list-group mt-3">
+        <li class="list-group-item"><a href="{% url 'admin_user_list' %}">Управление пользователями</a></li>
+        <li class="list-group-item"><a href="{% url 'list_equipment' %}">Список оборудования</a></li>
+        <li class="list-group-item"><a href="{% url 'list_tickets' %}">Заявки</a></li>
+        <li class="list-group-item"><a href="{% url 'list_feedback' %}">Отзывы</a></li>
+        <li class="list-group-item"><a href="{% url 'report_tickets' %}">Отчёты</a></li>
+    </ul>
+</div>
+{% endblock %}

@@ -8,12 +8,27 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{% url 'list_equipment' %}">
-                Система учёта оргтехники университета им. С.Ю. Витте
+            <a class="navbar-brand"
+               href="{% if user.is_authenticated %}
+                        {% if user.role == 'admin' %}
+                            {% url 'admin_dashboard' %}
+                        {% elif user.role == 'tech' %}
+                            {% url 'tech_dashboard' %}
+                        {% else %}
+                            {% url 'user_dashboard' %}
+                        {% endif %}
+                      {% else %}
+                        {% url 'login' %}
+                      {% endif %}">
+               Система учёта оргтехники университета им. С.Ю. Витте
             </a>
-
             <ul class="navbar-nav ms-auto">
                 {% if user.is_authenticated %}
+                    {% if user.role == "admin" %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'admin_user_list' %}">Администрирование</a>
+                        </li>
+                    {% endif %}
                     <li class="nav-item">
                          <form action="{% url 'logout' %}" method="post" class="d-inline">
                              {% csrf_token %}

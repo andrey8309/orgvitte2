@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Добавить пользователя{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Добавить пользователя</h2>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+
+        <button type="submit" class="btn btn-success">Создать</button>
+        <a href="{% url 'admin_user_list' %}" class="btn btn-secondary">Назад</a>
+    </form>
+</div>
+{% endblock %}

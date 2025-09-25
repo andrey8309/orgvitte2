@@ -1,14 +1,27 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
-from django.http import HttpResponse
-from .models import Equipment, EquipmentAction, Feedback, FileUpload, RequestTicket, Article
-from .forms import EquipmentForm, EquipmentActionForm, RequestTicketForm, FeedbackForm, FileUploadForm
-from django.contrib.auth.decorators import login_required, permission_required
+from django.http import HttpResponse, HttpResponseForbidden
+from .models import Equipment, EquipmentAction, Feedback, FileUpload, RequestTicket, Article, CustomUser
+from .forms import EquipmentForm, EquipmentActionForm, RequestTicketForm, FeedbackForm, FileUploadForm, UserEditForm, UserCreateForm
+from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
 import csv
 from django.db.models import Count
 from django.utils import timezone
 from datetime import timedelta
 import json
+from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import SetPasswordForm
+
+
+User = get_user_model()
+def is_admin(user):
+    return user.is_authenticated and user.role == "admin"
+
+@login_required
+@user_passes_test(is_admin)
+def admin_user_list(request):
+    users = User.objects.all()
+    return render(request, "admin_user_list.html", {"users": users})
 
 @login_required
 @permission_required('app_orgvitte.view_equipment', raise_exception=True)
@@ -282,7 +295,7 @@ def delete_file(request, pk):
 @login_required
 def list_articles(request):
     articles = Article.objects.all().order_by("-created_at")
-    return render(request, "articles.html", {"articles": articles})
+    return render(request, "list_articles.html", {"articles": articles})
 
 
 @login_required
@@ -338,3 +351,130 @@ def delete_feedback(request, pk):
     messages.success(request, "Отзыв успешно удалён.")
     return redirect('list_feedback')
 
+
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.role == "admin")
+def edit_user(request, user_id):
+    user = get_object_or_404(CustomUser, id=user_id)
+    if request.method == "POST":
+        form = UserEditForm(request.POST, instance=user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Данные пользователя обновлены ✅")
+            return redirect("admin_user_list")
+    else:
+        form = UserEditForm(instance=user)
+    return render(request, "edit_user.html", {"form": form, "user": user})
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.role == "admin")
+def delete_user(request, user_id):
+    user = get_object_or_404(CustomUser, id=user_id)
+    if request.method == "POST":
+        user.delete()
+        messages.success(request, "Пользователь удалён 🗑")
+        return redirect("admin_user_list")
+    return render(request, "delete_user.html", {"user": user})
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.role == "admin")
+def change_password(request, user_id):
+    user = get_object_or_404(CustomUser, id=user_id)
+    if request.method == "POST":
+        form = SetPasswordForm(user, request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Пароль обновлён 🔑")
+            return redirect("admin_user_list")
+    else:
+        form = SetPasswordForm(user)
+    return render(request, "change_password.html", {"form": form, "user": user})
+
+
+@login_required
+def create_user(request):
+    if request.method == "POST":
+        form = UserCreateForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Пользователь успешно создан!")
+            return redirect("admin_user_list")
+        else:
+            messages.error(request, "Ошибка при создании пользователя. Проверьте данные.")
+    else:
+        form = UserCreateForm()
+
+    return render(request, "create_user.html", {"form": form})
+
+
+@login_required
+def dashboard(request):
+    """Распределяем пользователя в нужный кабинет"""
+    if request.user.role == "admin":
+        return redirect("admin_dashboard")
+    elif request.user.role == "tech":
+        return redirect("tech_dashboard")
+    else:
+        return redirect("user_dashboard")
+
+
+@login_required
+def admin_dashboard(request):
+    """Панель администратора"""
+    return render(request, "admin_dashboard.html")
+
+
+@login_required
+def tech_dashboard(request):
+    """Панель техника"""
+    return render(request, "tech_dashboard.html")
+
+
+@login_required
+def user_dashboard(request):
+    """Панель обычного пользователя"""
+    return render(request, "user_dashboard.html")
+
+
+@login_required
+def update_ticket_status(request, ticket_id, new_status):
+    ticket = get_object_or_404(RequestTicket, id=ticket_id)
+
+
+    if request.user.role not in ["tech", "admin"]:
+        return HttpResponseForbidden("У вас нет прав для изменения статуса заявки.")
+
+    # Меняем статус
+    ticket.status = new_status
+    ticket.save()
+
+    # При закрытии заявки — логируем действие с оборудованием
+    if new_status == "done" and ticket.equipment:
+        action_type = None
+        description = f"Заявка #{ticket.id}: {ticket.get_request_type_display()}"
+
+        if ticket.request_type == "cartridge":
+            action_type = "repair"
+        elif ticket.request_type == "phone_number":
+            action_type = "movement"
+        elif ticket.request_type == "repair":
+            action_type = "repair"
+        elif ticket.request_type == "other":
+            action_type = "decommission"  # или "other", если добавим отдельный тип
+
+        if action_type:
+            EquipmentAction.objects.create(
+                equipment=ticket.equipment,
+                action_type=action_type,
+                description=description,
+                performed_by=request.user,
+                from_location=None,
+                to_location=None
+            )
+
+    messages.success(request, f"Статус заявки #{ticket.id} изменён на {ticket.get_status_display()}.")
+    return redirect("list_tickets")

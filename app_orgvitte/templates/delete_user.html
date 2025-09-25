@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}Удалить пользователя{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Удалить пользователя: {{ user.username }}</h2>
+    <p class="text-danger">Вы уверены, что хотите удалить этого пользователя? Действие необратимо.</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">🗑 Удалить</button>
+        <a href="{% url 'admin_user_list' %}" class="btn btn-secondary">⬅ Отмена</a>
+    </form>
+</div>
+{% endblock %}
