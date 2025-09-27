@@ -34,4 +34,6 @@ urlpatterns = [
     path("tech-panel/", views.tech_dashboard, name="tech_dashboard"),
     path("user-panel/", views.user_dashboard, name="user_dashboard"),
     path("tickets/<int:ticket_id>/status/<str:new_status>/", views.update_ticket_status, name="update_ticket_status"),
+    path("reports/dashboard/", views.report_dashboard, name="report_dashboard"),
+    path("reports/export/csv/", views.export_tickets_csv, name="export_tickets_csv"),
 ]

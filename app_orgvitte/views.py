@@ -11,6 +11,8 @@ from datetime import timedelta
 import json
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import SetPasswordForm
+from django.db.models.functions import TruncMonth
+
 
 
 User = get_user_model()
@@ -464,7 +466,7 @@ def update_ticket_status(request, ticket_id, new_status):
         elif ticket.request_type == "repair":
             action_type = "repair"
         elif ticket.request_type == "other":
-            action_type = "decommission"  # или "other", если добавим отдельный тип
+            action_type = "decommission"
 
         if action_type:
             EquipmentAction.objects.create(
@@ -478,3 +480,108 @@ def update_ticket_status(request, ticket_id, new_status):
 
     messages.success(request, f"Статус заявки #{ticket.id} изменён на {ticket.get_status_display()}.")
     return redirect("list_tickets")
+
+
+# Проверка роли: только админ и техник видят аналитику
+def is_staff_or_admin(user):
+    return user.is_authenticated and user.role in ["admin", "tech"]
+
+@login_required
+def report_dashboard(request):
+    # 1. Получаем параметры фильтра (если переданы в GET)
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
+
+    tickets = RequestTicket.objects.all()
+
+    if start_date:
+        tickets = tickets.filter(created_at__gte=start_date)
+    if end_date:
+        tickets = tickets.filter(created_at__lte=end_date)
+
+    # 2. Общая статистика
+    total_tickets = tickets.count()
+    new_tickets = tickets.filter(status="new").count()
+    in_progress_tickets = tickets.filter(status="in_progress").count()
+    done_tickets = tickets.filter(status="done").count()
+
+    # 3. Динамика заявок по месяцам
+    tickets_by_month = (
+        tickets.annotate(month=TruncMonth("created_at"))
+        .values("month")
+        .annotate(count=Count("id"))
+        .order_by("month")
+    )
+
+    months = [t["month"].strftime("%B %Y") for t in tickets_by_month]
+    month_counts = [t["count"] for t in tickets_by_month]
+
+    # 4. ТОП-5 оборудования
+    top_equipment = (
+        tickets.values("equipment__name")
+        .annotate(count=Count("id"))
+        .order_by("-count")[:5]
+    )
+    equipment_labels = [t["equipment__name"] or "Без оборудования" for t in top_equipment]
+    equipment_counts = [t["count"] for t in top_equipment]
+
+    # 5. Нагрузка на техников (по закрытым заявкам)
+    tickets_by_tech = (
+        tickets.filter(status="done")
+        .values("created_by__username")
+        .annotate(count=Count("id"))
+        .order_by("created_by__username")
+    )
+    tech_labels = [t["created_by__username"] or "Неизвестно" for t in tickets_by_tech]
+    tech_counts = [t["count"] for t in tickets_by_tech]
+
+    context = {
+        "total_tickets": total_tickets,
+        "new_tickets": new_tickets,
+        "in_progress_tickets": in_progress_tickets,
+        "done_tickets": done_tickets,
+        "months": months,
+        "month_counts": month_counts,
+        "equipment_labels": equipment_labels,
+        "equipment_counts": equipment_counts,
+        "tech_labels": tech_labels,
+        "tech_counts": tech_counts,
+        "start_date": start_date or "",
+        "end_date": end_date or "",
+    }
+    return render(request, "reports/report_dashboard.html", context)
+
+
+@login_required
+def export_tickets_csv(request):
+    response = HttpResponse(content_type="text/csv; charset=utf-8-sig")
+    response["Content-Disposition"] = 'attachment; filename="tickets_report.csv"'
+
+    writer = csv.writer(response, delimiter=";", quoting=csv.QUOTE_MINIMAL)
+
+    # Заголовки
+    writer.writerow(["ID", "Оборудование", "Тип заявки", "Описание", "Статус", "Создатель", "Дата"])
+
+    tickets = RequestTicket.objects.select_related("equipment", "created_by").all()
+
+    # Фильтрация по датам
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
+    if start_date and end_date:
+        tickets = tickets.filter(created_at__date__range=(start_date, end_date))
+
+    # Данные
+    for t in tickets:
+        writer.writerow([
+            t.id,
+            t.equipment.name if t.equipment else "—",
+            t.get_request_type_display(),
+            t.description,
+            t.get_status_display(),
+            t.created_by.username if t.created_by else "—",
+            t.created_at.strftime("%Y-%m-%d %H:%M")
+        ])
+
+    return response
+
+

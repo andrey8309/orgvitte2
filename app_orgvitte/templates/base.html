@@ -29,6 +29,11 @@
                             <a class="nav-link" href="{% url 'admin_user_list' %}">Администрирование</a>
                         </li>
                     {% endif %}
+                {% if user.is_authenticated and user.role == "admin" %}
+                        <li class="nav-item">
+                             <a class="nav-link" href="{% url 'report_dashboard' %}">📊 Аналитика</a>
+                         </li>
+                {% endif %}
                     <li class="nav-item">
                          <form action="{% url 'logout' %}" method="post" class="d-inline">
                              {% csrf_token %}

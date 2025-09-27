@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Отчётный дашборд{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">📊 Отчётный дашборд</h2>
+
+    <!-- Форма фильтрации -->
+    <form method="get" class="row g-3 mb-4">
+        <div class="col-md-3">
+            <label for="start_date" class="form-label">С даты:</label>
+            <input type="date" id="start_date" name="start_date" class="form-control" value="{{ start_date }}">
+        </div>
+        <div class="col-md-3">
+            <label for="end_date" class="form-label">По дату:</label>
+            <input type="date" id="end_date" name="end_date" class="form-control" value="{{ end_date }}">
+        </div>
+        <div class="col-md-3 align-self-end">
+            <button type="submit" class="btn btn-primary">Фильтровать</button>
+            <a href="{% url 'export_tickets_csv' %}?start_date={{ request.GET.start_date }}&end_date={{ request.GET.end_date }}"
+                class="btn btn-outline-success mt-2">📥 Экспортировать в CSV</a>
+            <a href="{% url 'report_dashboard' %}" class="btn btn-secondary">Сбросить</a>
+        </div>
+    </form>
+
+    <!-- Карточки статистики -->
+    <div class="row text-center mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-primary">
+                <div class="card-body">
+                    <h5 class="card-title">Всего заявок</h5>
+                    <p class="display-6 text-primary">{{ total_tickets }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-info">
+                <div class="card-body">
+                    <h5 class="card-title">Новые</h5>
+                    <p class="display-6 text-info">{{ new_tickets }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-warning">
+                <div class="card-body">
+                    <h5 class="card-title">В обработке</h5>
+                    <p class="display-6 text-warning">{{ in_progress_tickets }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-success">
+                <div class="card-body">
+                    <h5 class="card-title">Закрыто</h5>
+                    <p class="display-6 text-success">{{ done_tickets }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Графики -->
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <h5>📈 Динамика заявок по месяцам</h5>
+            <canvas id="ticketsByMonthChart"></canvas>
+        </div>
+        <div class="col-md-6 mb-4">
+            <h5>🏆 ТОП-5 оборудования</h5>
+            <canvas id="topEquipmentChart"></canvas>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <h5>👷 Нагрузка на техников</h5>
+            <canvas id="ticketsByTechChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Динамика заявок по месяцам
+    const ticketsByMonthCtx = document.getElementById('ticketsByMonthChart');
+    new Chart(ticketsByMonthCtx, {
+        type: 'line',
+        data: {
+            labels: {{ months|safe }},
+            datasets: [{
+                label: 'Количество заявок',
+                data: {{ month_counts|safe }},
+                borderColor: 'blue',
+                backgroundColor: 'rgba(0,123,255,0.2)',
+                fill: true,
+                tension: 0.3
+            }]
+        }
+    });
+
+    // ТОП-5 оборудования
+    const topEquipmentCtx = document.getElementById('topEquipmentChart');
+    new Chart(topEquipmentCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ equipment_labels|safe }},
+            datasets: [{
+                label: 'Количество заявок',
+                data: {{ equipment_counts|safe }},
+                backgroundColor: 'rgba(255,99,132,0.6)',
+                borderColor: 'rgb(255,99,132)',
+                borderWidth: 1
+            }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+
+    // Нагрузка на техников
+    const ticketsByTechCtx = document.getElementById('ticketsByTechChart');
+    new Chart(ticketsByTechCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ tech_labels|safe }},
+            datasets: [{
+                label: 'Закрытые заявки',
+                data: {{ tech_counts|safe }},
+                backgroundColor: [
+                    'rgba(54,162,235,0.6)',
+                    'rgba(255,206,86,0.6)',
+                    'rgba(75,192,192,0.6)',
+                    'rgba(153,102,255,0.6)',
+                    'rgba(255,159,64,0.6)'
+                ]
+            }]
+        }
+    });
+</script>
+{% endblock %}
+
