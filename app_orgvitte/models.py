@@ -109,6 +109,14 @@ class RequestTicket(models.Model):
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name="Создатель")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
 
+    assigned_to = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="assigned_tickets",
+        verbose_name="Назначенный техник"
+    )
+
     def __str__(self):
         return f"{self.get_request_type_display()} ({self.status})"
 

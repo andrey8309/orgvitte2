@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.http import HttpResponse, HttpResponseForbidden
 from .models import Equipment, EquipmentAction, Feedback, FileUpload, RequestTicket, Article, CustomUser
-from .forms import EquipmentForm, EquipmentActionForm, RequestTicketForm, FeedbackForm, FileUploadForm, UserEditForm, UserCreateForm
+from .forms import EquipmentForm, EquipmentActionForm, RequestTicketForm, FeedbackForm, FileUploadForm, UserEditForm, UserCreateForm, ArticleForm
 from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
 import csv
 from django.db.models import Count
@@ -207,26 +207,36 @@ def create_request_ticket(request, equipment_id=None):
 def update_ticket_status(request, ticket_id, new_status):
     ticket = get_object_or_404(RequestTicket, id=ticket_id)
 
-    valid_statuses = ['new', 'in_progress', 'done']
+    # Только админ или техник может менять
+    if request.user.role not in ["tech", "admin"]:
+        return HttpResponseForbidden("Нет прав для изменения статуса заявки.")
+
+    # Если техник — проверяем, назначена ли заявка ему
+    if request.user.role == "tech" and ticket.assigned_to != request.user:
+        return HttpResponseForbidden("Вы можете изменять только свои заявки.")
+
+    valid_statuses = ["new", "in_progress", "done"]
     if new_status not in valid_statuses:
         messages.error(request, "Недопустимый статус.")
-        return redirect('list_tickets')
+        return redirect("list_tickets")
 
     ticket.status = new_status
     ticket.save()
 
-    messages.success(
-        request,
-        f"Статус заявки #{ticket.id} изменён на '{ticket.get_status_display()}'."
-    )
-    return redirect('list_tickets')
+    messages.success(request, f"Статус заявки #{ticket.id} изменён на {ticket.get_status_display()}.")
+    return redirect("list_tickets")
 
 
 @login_required
 def list_tickets(request):
-    if request.user.is_superuser or request.user.groups.filter(name="Администратор").exists():
+    if request.user.role == "admin" or request.user.is_superuser:
+
+        tickets = RequestTicket.objects.all().order_by("-created_at")
+    elif request.user.role == "tech":
+
         tickets = RequestTicket.objects.all().order_by("-created_at")
     else:
+
         tickets = RequestTicket.objects.filter(created_by=request.user).order_by("-created_at")
 
     return render(request, "list_tickets.html", {"tickets": tickets})
@@ -314,14 +324,24 @@ def report_tickets(request):
 
     stats = (
         RequestTicket.objects.filter(created_at__gte=last_month)
-        .values("title")
+        .values("request_type")
         .annotate(total=Count("id"))
         .order_by("-total")
     )
 
-    # подготовим данные для графика
-    labels = [item["title"] for item in stats]
+
+    labels = [dict(RequestTicket.REQUEST_TYPES)[item["request_type"]] for item in stats]
     data = [item["total"] for item in stats]
+
+    tickets_by_tech = (
+        RequestTicket.objects.filter(status="done", created_at__gte=last_month)
+        .values("assigned_to__username")
+        .annotate(count=Count("id"))
+        .order_by("-count")
+    )
+
+    tech_labels = [item["assigned_to__username"] or "Не назначен" for item in tickets_by_tech]
+    tech_data = [item["count"] for item in tickets_by_tech]
 
     return render(
         request,
@@ -330,6 +350,8 @@ def report_tickets(request):
             "stats": stats,
             "labels": json.dumps(labels),
             "data": json.dumps(data),
+            "tech_labels": json.dumps(tech_labels),
+            "tech_data": json.dumps(tech_data),
         },
     )
 
@@ -446,19 +468,20 @@ def user_dashboard(request):
 def update_ticket_status(request, ticket_id, new_status):
     ticket = get_object_or_404(RequestTicket, id=ticket_id)
 
-
     if request.user.role not in ["tech", "admin"]:
         return HttpResponseForbidden("У вас нет прав для изменения статуса заявки.")
 
-    # Меняем статус
+    # Если техник берёт заявку в работу
+    if new_status == "in_progress" and request.user.role == "tech":
+        ticket.assigned_to = request.user
+
     ticket.status = new_status
     ticket.save()
 
-    # При закрытии заявки — логируем действие с оборудованием
+    # Логирование выполненной заявки
     if new_status == "done" and ticket.equipment:
         action_type = None
         description = f"Заявка #{ticket.id}: {ticket.get_request_type_display()}"
-
         if ticket.request_type == "cartridge":
             action_type = "repair"
         elif ticket.request_type == "phone_number":
@@ -473,9 +496,7 @@ def update_ticket_status(request, ticket_id, new_status):
                 equipment=ticket.equipment,
                 action_type=action_type,
                 description=description,
-                performed_by=request.user,
-                from_location=None,
-                to_location=None
+                performed_by=request.user
             )
 
     messages.success(request, f"Статус заявки #{ticket.id} изменён на {ticket.get_status_display()}.")
@@ -485,6 +506,23 @@ def update_ticket_status(request, ticket_id, new_status):
 # Проверка роли: только админ и техник видят аналитику
 def is_staff_or_admin(user):
     return user.is_authenticated and user.role in ["admin", "tech"]
+
+def assign_ticket_to_self(request, ticket_id):
+    ticket = get_object_or_404(RequestTicket, id=ticket_id)
+
+    if request.user.role != "tech":
+        return HttpResponseForbidden("Только техник может назначать заявки.")
+
+    if ticket.assigned_to:
+        messages.error(request, f"Заявка #{ticket.id} уже назначена {ticket.assigned_to.username}.")
+    else:
+        ticket.assigned_to = request.user
+        ticket.status = "in_progress"  # сразу ставим "В обработке"
+        ticket.save()
+        messages.success(request, f"Заявка #{ticket.id} назначена вам и переведена в работу.")
+
+    return redirect("list_tickets")
+
 
 @login_required
 def report_dashboard(request):
@@ -584,4 +622,33 @@ def export_tickets_csv(request):
 
     return response
 
+
+@login_required
+def assign_ticket(request, ticket_id):
+    ticket = get_object_or_404(RequestTicket, id=ticket_id)
+
+    if request.user.role != "tech":
+        return HttpResponseForbidden("Только техник может взять заявку в работу.")
+
+    ticket.assigned_to = request.user
+    ticket.status = "in_progress"
+    ticket.save()
+
+    messages.success(request, f"Заявка #{ticket.id} назначена вам и переведена в статус 'В работе'.")
+    return redirect("list_tickets")
+
+@login_required
+def create_article(request):
+    if request.method == "POST":
+        form = ArticleForm(request.POST)
+        if form.is_valid():
+            article = form.save(commit=False)
+            article.author = request.user
+            article.save()
+            messages.success(request, "Статья успешно опубликована!")
+            return redirect("list_articles")
+    else:
+        form = ArticleForm()
+
+    return render(request, "create_article.html", {"form": form})
 

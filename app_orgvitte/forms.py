@@ -34,8 +34,6 @@ class FileUploadForm(forms.ModelForm):
 
 
 
-
-
 class RequestTicketForm(forms.ModelForm):
     class Meta:
         model = RequestTicket
