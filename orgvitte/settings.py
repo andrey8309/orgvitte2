@@ -26,10 +26,10 @@ SECRET_KEY = 'django-insecure-k5o6%8d_&!y7et2hk%8f_-62eb5jt(c@r0$egw68l6sy-t*!f1
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DJANGO_DEBUG', '1') == '1'
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", "orgvitte-warrik.amvera.io"]
 
 CSRF_TRUSTED_ORIGINS = [
-    f"https://{host}" for host in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if host
+    "https://orgvitte-warrik.amvera.io",
 ]
 
 
