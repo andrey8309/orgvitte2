@@ -11,6 +11,8 @@ build:
   useCache: true
 
 run:
-  command: gunicorn orgvitte.wsgi:application --bind 0.0.0.0:80 --workers 3
+  command: python manage.py migrate &&
+    python manage.py collectstatic --noinput &&
+    gunicorn orgvitte.wsgi:application --bind 0.0.0.0:80 --workers 3
   persistenceMount: /data
   containerPort: 80
