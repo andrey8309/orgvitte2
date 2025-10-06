@@ -16,6 +16,12 @@ from django.db.models.functions import TruncMonth
 
 
 User = get_user_model()
+
+@login_required
+def csrf_failure(request, reason=""):
+    return render(request, "csrf_failure.html", {"reason": reason}, status=403)
+
+
 def is_admin(user):
     return user.is_authenticated and user.role == "admin"
 
@@ -254,7 +260,7 @@ def feedback_view(request):
         if form.is_valid():
             form.save()
             messages.success(request, "Спасибо! Ваше сообщение отправлено.")
-            return redirect("list_equipment")
+            return redirect("feedback")
         else:
             messages.error(request, "Пожалуйста, исправьте ошибки в форме.")
     else:

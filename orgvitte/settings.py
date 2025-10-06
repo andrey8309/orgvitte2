@@ -26,11 +26,13 @@ SECRET_KEY = 'django-insecure-k5o6%8d_&!y7et2hk%8f_-62eb5jt(c@r0$egw68l6sy-t*!f1
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DJANGO_DEBUG', '1') == '1'
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", "orgvitte-warrik.amvera.io"]
+ALLOWED_HOSTS = ['*']
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://orgvitte-warrik.amvera.io",
+    "https://orgvitte-warrik.amvera.io", 'http://127.0.0.1:8000'
 ]
+
+CSRF_FAILURE_VIEW = 'app_orgvitte.views.csrf_failure'
 
 
 
