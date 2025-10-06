@@ -239,7 +239,12 @@ def list_tickets(request):
 
         tickets = RequestTicket.objects.filter(created_by=request.user).order_by("-created_at")
 
-    return render(request, "list_tickets.html", {"tickets": tickets})
+    tech_users = CustomUser.objects.filter(role="tech")
+    context = {
+        "tickets": tickets,
+        "tech_users": tech_users,
+    }
+    return render(request, "list_tickets.html", context)
 
 
 @login_required
@@ -652,3 +657,23 @@ def create_article(request):
 
     return render(request, "create_article.html", {"form": form})
 
+@login_required
+def assign_technician(request, ticket_id):
+    """Позволяет администратору назначить техника для заявки."""
+    ticket = get_object_or_404(RequestTicket, id=ticket_id)
+
+    if request.user.role != "admin":
+        return HttpResponseForbidden("Только администратор может назначать техников.")
+
+    if request.method == "POST":
+        tech_id = request.POST.get("technician_id")
+        if tech_id:
+            technician = CustomUser.objects.filter(id=tech_id, role="tech").first()
+            if technician:
+                ticket.assigned_to = technician
+                ticket.status = "in_progress"  # можно автоматически перевести в "В работе"
+                ticket.save()
+                messages.success(request, f"Заявка #{ticket.id} назначена технику {technician.username}.")
+        return redirect("list_tickets")
+
+    return redirect("list_tickets")

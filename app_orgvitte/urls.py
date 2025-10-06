@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .views import assign_technician
 
 urlpatterns = [
     path('', views.list_equipment, name='list_equipment'),
@@ -41,4 +42,6 @@ urlpatterns = [
     path("tickets/<int:ticket_id>/assign/", views.assign_ticket, name="assign_ticket"),
     path("tickets/<int:ticket_id>/assign/", views.assign_ticket_to_self, name="assign_ticket_to_self"),
     path("tickets/<int:ticket_id>/assign/", views.assign_ticket_to_self, name="assign_ticket_to_self"),
+    path("equipment/<int:equipment_id>/assign/", assign_technician, name="assign_technician"),
+    path("tickets/<int:ticket_id>/assign_technician/", views.assign_technician, name="assign_technician"),
 ]

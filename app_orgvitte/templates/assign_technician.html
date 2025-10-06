@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Назначение техника{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Назначение техника для {{ equipment.name }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="technician_id" class="form-label">Выберите техника:</label>
+            <select name="technician_id" id="technician_id" class="form-select">
+                {% for tech in technicians %}
+                    <option value="{{ tech.id }}">{{ tech.username }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-success">Сохранить</button>
+        <a href="{% url 'list_equipment' %}" class="btn btn-secondary">Отмена</a>
+    </form>
+</div>
+{% endblock %}

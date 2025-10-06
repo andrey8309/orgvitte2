@@ -49,16 +49,25 @@
                 </td>
                 <td>{{ ticket.created_by.username }}</td>
                 <td>
-                    {% if ticket.assigned_to %}
-                        {{ ticket.assigned_to.username }}
+                    {% if user.role == "admin" %}
+                      <form method="post" action="{% url 'assign_technician' ticket.id %}">
+                          {% csrf_token %}
+                             <select name="technician_id" class="form-select form-select-sm d-inline w-auto">
+                                 <option value="">— Не назначен —</option>
+                                    {% for tech in tech_users %}
+                                      <option value="{{ tech.id }}" {% if ticket.assigned_to == tech %}selected{% endif %}>
+                                        {{ tech.username }}
+                                      </option>
+                                    {% endfor %}
+                             </select>
+                             <button type="submit" class="btn btn-sm btn-outline-success">Назначить</button>
+                      </form>
                     {% else %}
-                        {% if user.role == "tech" %}
-                            <a href="{% url 'assign_ticket_to_self' ticket.id %}" class="btn btn-sm btn-outline-primary">
-                                Назначить себе
-                            </a>
-                        {% else %}
-                            <span class="text-muted">Не назначен</span>
-                        {% endif %}
+                       {% if ticket.assigned_to %}
+                          {{ ticket.assigned_to.username }}
+                       {% else %}
+                          <span class="text-muted">Не назначен</span>
+                       {% endif %}
                     {% endif %}
                 </td>
                 <td>

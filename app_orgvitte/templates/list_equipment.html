@@ -37,6 +37,7 @@
             <th>Название</th>
             <th>Инв. номер</th>
             <th>Состояние</th>
+            <th>Назначенный техник</th>
             <th>Действия</th>
         </tr>
     </thead>
@@ -47,6 +48,13 @@
             <td>{{ eq.name }}</td>
             <td>{{ eq.inventory_number }}</td>
             <td>{{ eq.get_status_display }}</td>
+            <td>
+                {% if eq.assigned_technician %}
+                    {{ eq.assigned_technician.username }}
+                {% else %}
+                    <span class="text-muted">Не назначен</span>
+                {% endif %}
+            </td>
             <td>
                 {% if perms.app_orgvitte.change_equipment %}
                     <a href="{% url 'edit_equipment' eq.id %}" class="btn btn-warning btn-sm">✏️</a>
@@ -65,14 +73,19 @@
                 {% endif %}
 
                 {% if perms.app_orgvitte.view_fileupload %}
-                      <a href="{% url 'equipment_files' eq.id %}" class="btn btn-dark btn-sm">📎 файлы</a>
+                    <a href="{% url 'equipment_files' eq.id %}" class="btn btn-dark btn-sm">📎 файлы</a>
                 {% endif %}
 
+                {% if user.role == "admin" and eq.id %}
+                    <a href="{% url 'assign_technician' eq.id %}" class="btn btn-sm btn-outline-primary">
+                        Назначить техника
+                    </a>
+                {% endif %}
             </td>
         </tr>
     {% empty %}
         <tr>
-            <td colspan="5" class="text-center">Нет записей</td>
+            <td colspan="6" class="text-center">Нет записей</td>
         </tr>
     {% endfor %}
     </tbody>
@@ -81,16 +94,12 @@
 {% if perms.app_orgvitte.add_equipment %}
     <a href="{% url 'add_equipment' %}" class="btn btn-primary">Добавить оборудование</a>
 
-<hr>
-<div class="mt-4">
-    <h4>Дополнительные функции</h4>
-    <a href="{% url 'feedback' %}" class="btn btn-outline-primary">✉ Обратная связь</a>
-    <a href="{% url 'list_tickets' %}" class="btn btn-outline-warning">📝 Заявки</a>
-    <a href="{% url 'list_articles' %}" class="btn btn-outline-info">📚 Статьи / Справка</a>
-</div>
-<div class="mt-4">
-
-
-
+    <hr>
+    <div class="mt-4">
+        <h4>Дополнительные функции</h4>
+        <a href="{% url 'feedback' %}" class="btn btn-outline-primary">✉ Обратная связь</a>
+        <a href="{% url 'list_tickets' %}" class="btn btn-outline-warning">📝 Заявки</a>
+        <a href="{% url 'list_articles' %}" class="btn btn-outline-info">📚 Статьи / Справка</a>
+    </div>
 {% endif %}
 {% endblock %}
