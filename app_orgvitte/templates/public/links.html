@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Полезные ссылки</h2>
+  <ul>
+    <li><a href="https://muiv.ru" target="_blank">Официальный сайт университета</a></li>
+    <li><a href="{% url 'privacy' %}">Политика конфиденциальности</a></li>
+    <li><a href="{% url 'faq' %}">Часто задаваемые вопросы</a></li>
+  </ul>
+</div>
+{% endblock %}

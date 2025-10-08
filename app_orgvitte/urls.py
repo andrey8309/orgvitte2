@@ -3,6 +3,16 @@ from . import views
 from .views import assign_technician
 
 urlpatterns = [
+    path("", views.public_home, name="public_home"),
+    path("about/", views.about, name="about"),
+    path("rules/", views.rules, name="rules"),
+    path("links/", views.links, name="links"),
+    path("contacts/", views.contacts, name="contacts"),
+    path("guide/", views.guide, name="guide"),
+    path("news/", views.news, name="news"),
+    path("faq/", views.faq, name="faq"),
+    path("privacy/", views.privacy, name="privacy"),
+    path("public-feedback/", views.public_feedback, name="public_feedback"),
     path('', views.list_equipment, name='list_equipment'),
     path('add/', views.add_equipment, name='add_equipment'),
     path('edit/<int:pk>/', views.edit_equipment, name='edit_equipment'),

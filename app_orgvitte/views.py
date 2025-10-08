@@ -17,6 +17,10 @@ from django.db.models.functions import TruncMonth
 
 User = get_user_model()
 
+def public_home(request):
+    """Публичная главная страница"""
+    return render(request, "public/home.html")
+
 @login_required
 def csrf_failure(request, reason=""):
     return render(request, "csrf_failure.html", {"reason": reason}, status=403)
@@ -683,3 +687,34 @@ def assign_technician(request, ticket_id):
         return redirect("list_tickets")
 
     return redirect("list_tickets")
+
+
+def public_home(request):
+    return render(request, "public/home.html")
+
+def about(request):
+    return render(request, "public/about.html")
+
+def rules(request):
+    return render(request, "public/rules.html")
+
+def links(request):
+    return render(request, "public/links.html")
+
+def contacts(request):
+    return render(request, "public/contacts.html")
+
+def guide(request):
+    return render(request, "public/guide.html")
+
+def news(request):
+    return render(request, "public/news.html")
+
+def faq(request):
+    return render(request, "public/faq.html")
+
+def privacy(request):
+    return render(request, "public/privacy.html")
+
+def public_feedback(request):
+    return render(request, "public/feedback.html")
