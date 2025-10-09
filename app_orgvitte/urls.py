@@ -3,7 +3,6 @@ from . import views
 from .views import assign_technician
 
 urlpatterns = [
-    path("", views.public_home, name="public_home"),
     path("about/", views.about, name="about"),
     path("rules/", views.rules, name="rules"),
     path("links/", views.links, name="links"),
@@ -54,4 +53,5 @@ urlpatterns = [
     path("tickets/<int:ticket_id>/assign/", views.assign_ticket_to_self, name="assign_ticket_to_self"),
     path("equipment/<int:equipment_id>/assign/", assign_technician, name="assign_technician"),
     path("tickets/<int:ticket_id>/assign_technician/", views.assign_technician, name="assign_technician"),
+    path("", views.public_home, name="public_home"),
 ]
