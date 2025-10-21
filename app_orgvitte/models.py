@@ -95,11 +95,24 @@ class RequestTicket(models.Model):
         ("other", "Другое"),
     ]
 
+    PRIORITY_CHOICES = [
+        ("low", "Низкий"),
+        ("medium", "Средний"),
+        ("high", "Высокий"),
+        ("urgent", "Критический"),
+    ]
+
     equipment = models.ForeignKey(
         Equipment, on_delete=models.CASCADE, verbose_name="Оборудование", null=True, blank=True
     )
     request_type = models.CharField(max_length=50, choices=REQUEST_TYPES, verbose_name="Тип заявки")
     description = models.TextField(verbose_name="Описание проблемы")
+    department = models.CharField(max_length=255, verbose_name="Отдел / подразделение")
+    contact_info = models.CharField(max_length=255, verbose_name="Контактные данные заявителя")
+    photo = models.ImageField(upload_to="tickets_photos/", null=True, blank=True, verbose_name="Фото неисправности")
+    repair_date = models.DateField(null=True, blank=True, verbose_name="Желаемая дата ремонта")
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default="medium", verbose_name="Приоритет")
+
     status = models.CharField(
         max_length=20,
         choices=[("new", "Новая"), ("in_progress", "В обработке"), ("done", "Выполнена")],

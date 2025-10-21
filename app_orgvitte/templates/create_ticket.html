@@ -1,31 +1,68 @@
 {% extends 'base.html' %}
-
 {% block title %}Создать заявку{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h2 class="mb-4">Создать заявку</h2>
+    <h2 class="mb-4 text-center">Создать заявку на обслуживание</h2>
 
-    <form method="post">
+    <form method="post" enctype="multipart/form-data" class="card p-4 shadow-sm bg-light border-0 rounded-4">
         {% csrf_token %}
 
-        <div class="mb-3">
-            <label for="{{ form.equipment.id_for_label }}" class="form-label">Оборудование</label>
-            {{ form.equipment }}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="{{ form.equipment.id_for_label }}" class="form-label fw-bold">Оборудование</label>
+                {{ form.equipment }}
+            </div>
+            <div class="col-md-6">
+                <label for="{{ form.request_type.id_for_label }}" class="form-label fw-bold">Тип заявки</label>
+                {{ form.request_type }}
+            </div>
         </div>
 
         <div class="mb-3">
-            <label for="{{ form.request_type.id_for_label }}" class="form-label">Тип заявки</label>
-            {{ form.request_type }}
-        </div>
-
-        <div class="mb-3">
-            <label for="{{ form.description.id_for_label }}" class="form-label">Описание проблемы</label>
+            <label for="{{ form.description.id_for_label }}" class="form-label fw-bold">Описание проблемы</label>
             {{ form.description }}
+            <div class="form-text text-muted">Опишите неисправность как можно подробнее.</div>
         </div>
 
-        <button type="submit" class="btn btn-success">Создать заявку</button>
-        <a href="{% url 'list_tickets' %}" class="btn btn-secondary">Назад</a>
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="{{ form.department.id_for_label }}" class="form-label fw-bold">Отдел / подразделение</label>
+                {{ form.department }}
+            </div>
+            <div class="col-md-6">
+                <label for="{{ form.contact_info.id_for_label }}" class="form-label fw-bold">Контактные данные</label>
+                {{ form.contact_info }}
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="{{ form.repair_date.id_for_label }}" class="form-label fw-bold">Желаемая дата ремонта</label>
+                {{ form.repair_date }}
+            </div>
+            <div class="col-md-6">
+                <label for="{{ form.priority.id_for_label }}" class="form-label fw-bold">Приоритет</label>
+                {{ form.priority }}
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label for="{{ form.photo.id_for_label }}" class="form-label fw-bold">Фото неисправности</label>
+            {{ form.photo }}
+            <div class="form-text text-muted">Прикрепите изображение для ускорения диагностики (необязательно).</div>
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+            <a href="{% url 'list_tickets' %}" class="btn btn-outline-secondary px-4">← Назад</a>
+            <button type="submit" class="btn btn-success px-4">Создать заявку</button>
+        </div>
     </form>
 </div>
 {% endblock %}

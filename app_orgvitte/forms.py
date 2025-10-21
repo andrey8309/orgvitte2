@@ -37,7 +37,40 @@ class FileUploadForm(forms.ModelForm):
 class RequestTicketForm(forms.ModelForm):
     class Meta:
         model = RequestTicket
-        fields = ["equipment", "request_type", "description"]
+        fields = ["equipment", "request_type", "description",
+                  "department", "contact_info", "photo", "repair_date", "priority"]
+
+        widgets = {
+            "equipment": forms.Select(attrs={
+                "class": "form-select",
+            }),
+            "request_type": forms.Select(attrs={
+                "class": "form-select",
+            }),
+            "description": forms.Textarea(attrs={
+                "class": "form-control",
+                "rows": 4,
+                "placeholder": "Опишите проблему подробно...",
+            }),
+            "department": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Укажите отдел / подразделение",
+            }),
+            "contact_info": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Телефон, email или внутренний номер",
+            }),
+            "photo": forms.ClearableFileInput(attrs={
+                "class": "form-control",
+            }),
+            "repair_date": forms.DateInput(attrs={
+                "type": "date",
+                "class": "form-control",
+            }),
+            "priority": forms.Select(attrs={
+                "class": "form-select",
+            }),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -45,7 +78,7 @@ class RequestTicketForm(forms.ModelForm):
         # Сначала ставим все варианты из модели
         self.fields["request_type"].choices = RequestTicket.REQUEST_TYPES
 
-        # Попробуем определить equipment_id (с учётом POST, initial или instance)
+        # определяем equipment_id (с учётом POST, initial или instance)
         equipment_id = None
 
         # 1) из POST

@@ -5,13 +5,14 @@ from .models import Equipment, EquipmentAction, Feedback, FileUpload, RequestTic
 from .forms import EquipmentForm, EquipmentActionForm, RequestTicketForm, FeedbackForm, FileUploadForm, UserEditForm, UserCreateForm, ArticleForm
 from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
 import csv
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.utils import timezone
 from datetime import timedelta
 import json
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import SetPasswordForm
 from django.db.models.functions import TruncMonth
+from django.utils.dateparse import parse_date
 
 
 
@@ -188,22 +189,28 @@ def export_equipment_csv(request):
 @login_required
 def create_request_ticket(request, equipment_id=None):
     """
-    Создание заявки
+    Создание заявки пользователем
     """
     equipment = None
     if equipment_id:
         equipment = get_object_or_404(Equipment, id=equipment_id)
 
     if request.method == "POST":
-        form = RequestTicketForm(request.POST, initial={"equipment": equipment.id if equipment else None})
+        form = RequestTicketForm(request.POST, request.FILES,
+                                 initial={"equipment": equipment.id if equipment else None})
         if form.is_valid():
             ticket = form.save(commit=False)
-            ticket.created_by = request.user
+            ticket.created_by = request.user  # ФИО из учётки (username или можно request.user.get_full_name())
+
+            # Автоподстановка ФИО (если нужно)
+            if not ticket.contact_info:
+                ticket.contact_info = request.user.email or "—"
+
             ticket.save()
-            messages.success(request, f"Заявка «{ticket.get_request_type_display()}» успешно создана!")
+            messages.success(request, f"✅ Заявка «{ticket.get_request_type_display()}» успешно создана!")
             return redirect("list_tickets")
         else:
-            messages.error(request, "Ошибка при создании заявки. Проверьте введённые данные.")
+            messages.error(request, "⚠️ Ошибка при создании заявки. Проверьте заполненные поля.")
     else:
         form = RequestTicketForm(initial={"equipment": equipment.id if equipment else None})
 
@@ -239,20 +246,48 @@ def update_ticket_status(request, ticket_id, new_status):
 
 @login_required
 def list_tickets(request):
-    if request.user.role == "admin" or request.user.is_superuser:
+    tickets = RequestTicket.objects.all().order_by("-created_at")
 
-        tickets = RequestTicket.objects.all().order_by("-created_at")
-    elif request.user.role == "tech":
+    # --- фильтры ---
+    request_type = request.GET.get("request_type")
+    status = request.GET.get("status")
+    created_by = request.GET.get("created_by")
+    date_from = request.GET.get("date_from")
+    date_to = request.GET.get("date_to")
 
-        tickets = RequestTicket.objects.all().order_by("-created_at")
-    else:
+    if request_type and request_type != "all":
+        tickets = tickets.filter(request_type=request_type)
 
-        tickets = RequestTicket.objects.filter(created_by=request.user).order_by("-created_at")
+    if status and status != "all":
+        tickets = tickets.filter(status=status)
+
+    if created_by and request.user.role == "admin":
+        tickets = tickets.filter(created_by__username__icontains=created_by)
+
+    if date_from:
+        tickets = tickets.filter(created_at__date__gte=parse_date(date_from))
+    if date_to:
+        tickets = tickets.filter(created_at__date__lte=parse_date(date_to))
+
+    # Техник видит только свои заявки, если не админ
+    if request.user.role == "tech":
+        tickets = tickets.filter(Q(assigned_to=request.user) | Q(created_by=request.user))
+
+    # Пользователь видит только свои заявки
+    elif request.user.role == "user":
+        tickets = tickets.filter(created_by=request.user)
 
     tech_users = CustomUser.objects.filter(role="tech")
+
     context = {
         "tickets": tickets,
         "tech_users": tech_users,
+        "request_types": RequestTicket.REQUEST_TYPES,
+        "request_type_selected": request_type or "all",
+        "status": status or "all",
+        "created_by": created_by or "",
+        "date_from": date_from or "",
+        "date_to": date_to or "",
     }
     return render(request, "list_tickets.html", context)
 
@@ -332,11 +367,12 @@ def view_article(request, article_id):
 
 @login_required
 def report_tickets(request):
-    """Отчёт по заявкам: количество заявок по типам за последние 30 дней"""
+    """Отчёт по заявкам: количество заявок по типам и статусам за последние 30 дней"""
 
     # последние 30 дней
     last_month = timezone.now() - timedelta(days=30)
 
+    # Количество заявок по типам
     stats = (
         RequestTicket.objects.filter(created_at__gte=last_month)
         .values("request_type")
@@ -344,10 +380,15 @@ def report_tickets(request):
         .order_by("-total")
     )
 
+    # добавим человекочитаемое имя типа
+    for item in stats:
+        item["request_type_display"] = dict(RequestTicket.REQUEST_TYPES).get(item["request_type"], "—")
 
-    labels = [dict(RequestTicket.REQUEST_TYPES)[item["request_type"]] for item in stats]
+    # данные для графика
+    labels = [item["request_type_display"] for item in stats]
     data = [item["total"] for item in stats]
 
+    # Количество выполненных заявок по техникам
     tickets_by_tech = (
         RequestTicket.objects.filter(status="done", created_at__gte=last_month)
         .values("assigned_to__username")
@@ -358,11 +399,27 @@ def report_tickets(request):
     tech_labels = [item["assigned_to__username"] or "Не назначен" for item in tickets_by_tech]
     tech_data = [item["count"] for item in tickets_by_tech]
 
+    # Дополнительно: количество заявок по статусам
+    tickets_by_status = (
+        RequestTicket.objects.filter(created_at__gte=last_month)
+        .values("status")
+        .annotate(count=Count("id"))
+        .order_by("status")
+    )
+
+    status_map = dict(RequestTicket._meta.get_field("status").choices)
+    for row in tickets_by_status:
+        row["status_display"] = status_map.get(row["status"], "—")
+
     return render(
         request,
         "report_tickets.html",
         {
+            # таблицы
             "stats": stats,
+            "tickets_by_status": tickets_by_status,
+            "tickets_by_tech": tickets_by_tech,
+            # данные для графиков
             "labels": json.dumps(labels),
             "data": json.dumps(data),
             "tech_labels": json.dumps(tech_labels),
