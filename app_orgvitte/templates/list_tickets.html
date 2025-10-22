@@ -5,56 +5,52 @@
 <div class="container mt-4">
     <h2 class="mb-4">Список заявок</h2>
 
-    <!-- Форма фильтрации -->
-    <form method="get" class="row g-3 mb-3 p-3 border rounded bg-light shadow-sm">
+    {% if user.role in "tech admin user" %}
+        <a href="{% url 'create_request_ticket' %}" class="btn btn-primary mb-3">Создать заявку</a>
+    {% endif %}
+    <form method="get" class="card p-3 mb-4 shadow-sm">
+    <div class="row g-2">
         <div class="col-md-3">
             <label class="form-label">Тип заявки</label>
             <select name="request_type" class="form-select">
-                <option value="all" {% if request.GET.request_type == "all" or not request.GET.request_type %}selected{% endif %}>Все типы</option>
+                <option value="">Все типы</option>
                 {% for key, label in request_types %}
-                   <option value="{{ key }}" {% if request.GET.request_type == key %}selected{% endif %}>{{ label }}</option>
+                    <option value="{{ key }}" {% if key == request_type %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
             </select>
         </div>
 
-        <div class="col-md-3">
+        <div class="col-md-2">
             <label class="form-label">Статус</label>
             <select name="status" class="form-select">
-                <option value="all" {% if request.GET.status == "all" or not request.GET.status %}selected{% endif %}>Все статусы</option>
-                <option value="new" {% if request.GET.status == "new" %}selected{% endif %}>Новая</option>
-                <option value="in_progress" {% if request.GET.status == "in_progress" %}selected{% endif %}>В обработке</option>
-                <option value="done" {% if request.GET.status == "done" %}selected{% endif %}>Выполнена</option>
+                <option value="">Все</option>
+                <option value="new" {% if status == 'new' %}selected{% endif %}>Новая</option>
+                <option value="in_progress" {% if status == 'in_progress' %}selected{% endif %}>В работе</option>
+                <option value="done" {% if status == 'done' %}selected{% endif %}>Закрыта</option>
             </select>
         </div>
 
-        {% if user.role == "admin" %}
-        <div class="col-md-3">
-            <label class="form-label">Создатель</label>
-            <input type="text" name="created_by" class="form-control"
-                   placeholder="ФИО или логин" value="{{ request.GET.created_by }}">
-        </div>
-        {% endif %}
-
-        <div class="col-md-3">
-            <label class="form-label">Дата создания</label>
-            <div class="input-group">
-                <input type="date" name="date_from" class="form-control" value="{{ request.GET.date_from }}">
-                <span class="input-group-text">–</span>
-                <input type="date" name="date_to" class="form-control" value="{{ request.GET.date_to }}">
-            </div>
+        <div class="col-md-2">
+            <label class="form-label">Автор</label>
+            <input type="text" name="created_by" class="form-control" value="{{ created_by }}" placeholder="ФИО или логин">
         </div>
 
-        <div class="col-md-12 d-flex justify-content-end mt-3">
-            <button type="submit" class="btn btn-primary me-2">Применить</button>
-            <a href="{% url 'list_tickets' %}" class="btn btn-secondary">Сбросить</a>
+        <div class="col-md-2">
+            <label class="form-label">С даты</label>
+            <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
         </div>
+
+        <div class="col-md-2">
+            <label class="form-label">По дату</label>
+            <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
+        </div>
+
+        <div class="col-md-1 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100">Фильтр</button>
+        </div>
+    </div>
     </form>
 
-    {% if user.role in "tech admin user" %}
-        <a href="{% url 'create_request_ticket' %}" class="btn btn-success mb-3">Создать заявку</a>
-    {% endif %}
-
-    <!-- Таблица заявок -->
     <table class="table table-striped table-bordered bg-white shadow-sm">
         <thead class="table-dark">
             <tr>
@@ -63,6 +59,7 @@
                 <th>Оборудование</th>
                 <th>Тип заявки</th>
                 <th>Описание</th>
+                <th>Приоритет</th>
                 <th>Статус</th>
                 <th>Создал</th>
                 <th>Назначенный техник</th>
@@ -83,30 +80,31 @@
                 </td>
                 <td>{{ ticket.get_request_type_display }}</td>
                 <td>{{ ticket.description }}</td>
+                <td>{{ ticket.get_priority_display }}</td>
                 <td>
                     {% if ticket.status == 'new' %}
                         <span class="badge bg-primary">Новая</span>
                     {% elif ticket.status == 'in_progress' %}
-                        <span class="badge bg-warning text-dark">В обработке</span>
+                        <span class="badge bg-warning text-dark">В работе</span>
                     {% elif ticket.status == 'done' %}
-                        <span class="badge bg-success">Выполнена</span>
+                        <span class="badge bg-success">Закрыта</span>
                     {% endif %}
                 </td>
                 <td>{{ ticket.created_by.username }}</td>
                 <td>
                     {% if user.role == "admin" %}
-                      <form method="post" action="{% url 'assign_technician' ticket.id %}">
-                          {% csrf_token %}
-                          <select name="technician_id" class="form-select form-select-sm d-inline w-auto">
-                              <option value="">— Не назначен —</option>
-                              {% for tech in tech_users %}
-                                  <option value="{{ tech.id }}" {% if ticket.assigned_to == tech %}selected{% endif %}>
-                                      {{ tech.username }}
-                                  </option>
-                              {% endfor %}
-                          </select>
-                          <button type="submit" class="btn btn-sm btn-outline-success">Назначить</button>
-                      </form>
+                        <form method="post" action="{% url 'assign_technician' ticket.id %}">
+                            {% csrf_token %}
+                            <select name="technician_id" class="form-select form-select-sm d-inline w-auto">
+                                <option value="">— Не назначен —</option>
+                                {% for tech in tech_users %}
+                                    <option value="{{ tech.id }}" {% if ticket.assigned_to == tech %}selected{% endif %}>
+                                        {{ tech.username }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-outline-success">Назначить</button>
+                        </form>
                     {% else %}
                         {% if ticket.assigned_to %}
                             {{ ticket.assigned_to.username }}
@@ -116,22 +114,29 @@
                     {% endif %}
                 </td>
                 <td>
-                    {% if user.role == "tech" or user.role == "admin" %}
-                        {% if ticket.status == 'in_progress' and ticket.assigned_to == user %}
+                    {% if user.role == "tech" %}
+                        {% if ticket.status == 'new' %}
+                            <a href="{% url 'update_ticket_status' ticket.id 'in_progress' %}" class="btn btn-sm btn-warning">Взять в работу</a>
+                        {% elif ticket.status == 'in_progress' and ticket.assigned_to == user %}
                             <a href="{% url 'update_ticket_status' ticket.id 'done' %}" class="btn btn-sm btn-success">Закрыть</a>
+                        {% endif %}
+                    {% elif user.role == "admin" %}
+                        {% if ticket.status == 'new' %}
+                            <span class="text-muted">Ожидает взятия</span>
+                        {% elif ticket.status == 'in_progress' %}
+                            <span class="text-warning">В работе</span>
+                        {% elif ticket.status == 'done' %}
+                            <span class="text-success">Закрыта</span>
                         {% endif %}
                     {% endif %}
                 </td>
             </tr>
         {% empty %}
             <tr>
-                <td colspan="9" class="text-center">Заявок пока нет</td>
+                <td colspan="10" class="text-center">Заявок пока нет</td>
             </tr>
         {% endfor %}
         </tbody>
     </table>
 </div>
-<pre>{{ request_types }}</pre>
 {% endblock %}
-
-

@@ -229,8 +229,12 @@ def update_ticket_status(request, ticket_id, new_status):
         return HttpResponseForbidden("Нет прав для изменения статуса заявки.")
 
     # Если техник — проверяем, назначена ли заявка ему
-    if request.user.role == "tech" and ticket.assigned_to != request.user:
-        return HttpResponseForbidden("Вы можете изменять только свои заявки.")
+    if request.user.role == "tech":
+        # если заявка новая и техник её берёт в работу — назначаем автоматически
+        if new_status == "in_progress" and ticket.status == "new":
+            ticket.assigned_to = request.user
+        elif ticket.assigned_to != request.user:
+            return HttpResponseForbidden("Вы можете изменять только свои заявки.")
 
     valid_statuses = ["new", "in_progress", "done"]
     if new_status not in valid_statuses:
@@ -242,6 +246,7 @@ def update_ticket_status(request, ticket_id, new_status):
 
     messages.success(request, f"Статус заявки #{ticket.id} изменён на {ticket.get_status_display()}.")
     return redirect("list_tickets")
+
 
 
 @login_required
@@ -738,7 +743,7 @@ def assign_technician(request, ticket_id):
             technician = CustomUser.objects.filter(id=tech_id, role="tech").first()
             if technician:
                 ticket.assigned_to = technician
-                ticket.status = "in_progress"  # можно автоматически перевести в "В работе"
+                #ticket.status = "in_progress"
                 ticket.save()
                 messages.success(request, f"Заявка #{ticket.id} назначена технику {technician.username}.")
         return redirect("list_tickets")
