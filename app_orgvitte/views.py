@@ -774,4 +774,20 @@ def privacy(request):
     return render(request, "public/privacy.html")
 
 def public_feedback(request):
-    return render(request, "public/feedback.html")
+    """Публичная страница обратной связи (доступна без авторизации)."""
+    if request.method == "POST":
+        form = FeedbackForm(request.POST)
+        if form.is_valid():
+            feedback = form.save(commit=False)
+            # если пользователь вошёл — сохраняем связь
+            if request.user.is_authenticated:
+                feedback.user = request.user
+            feedback.save()
+            messages.success(request, "Спасибо! Ваш отзыв успешно отправлен.")
+            return redirect("public_feedback")
+        else:
+            messages.error(request, "Пожалуйста, исправьте ошибки в форме.")
+    else:
+        form = FeedbackForm()
+
+    return render(request, "public/feedback.html", {"form": form})
